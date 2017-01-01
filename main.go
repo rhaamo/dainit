@@ -1,5 +1,5 @@
 // dainit is a simple init system for Linux.
-// 
+//
 // dainit will currently do the following:
 //  1. Set the hostname
 //  2. Remount the root filesystem rw
@@ -13,6 +13,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"syscall"
@@ -38,23 +39,22 @@ func runquiet(cmd string, args ...string) error {
 func SetHostname(hostname string) {
 	proc, err := os.Create("/proc/sys/kernel/hostname")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		log.Println(err)
 	}
 	defer proc.Close()
 
 	n, err := proc.Write([]byte(hostname))
 	if n != len(hostname) || err != nil {
-		fmt.Fprintf(os.Stderr, "Hostname not set incorrectly (%d != %d, %v) \n", n, len(hostname), err)
+		log.Println(err)
 	}
 }
 
 func main() {
-	// Set the hostname for getty to be happy.
-	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
-		SetHostname(string(hostname))
-	}
-
-	// Remount root as rw
+	// Remount root as rw.
+	//
+	// This should be handled by mount -a according to mount(8), since the flags that
+	// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
+	// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
 	println("Remounting root filesystem")
 	Remount("/")
 
@@ -62,10 +62,43 @@ func main() {
 	println("Mounting local file systems")
 	netfs := []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
 	virtfs := []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
-	MountAll(netfs)
 
-	// TODO: Find or write a systemd-free replacement for udevd and get rid of this.
-	systemdHacks()
+	MountAllExcept(netfs)
+	// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
+	run("swapon", "-a")
+
+	// Set the hostname for getty to be happy.
+	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
+		SetHostname(string(hostname))
+	}
+
+	// There's a little (dare I say, a lot?) of black magic that seems to
+	// happen on a modern Linux systems for filesystems.
+	//
+	// Time was, everything would go into /etc/fstab.
+	//
+	// If you read "Demystifying the init system" (https://felipec.wordpress.com/2013/11/04/init/)
+	// he manually mounts /proc, /sys, /run, etc.
+	//
+	// When I do that on my Debian system, I get an "already mounted" error
+	// despite it not being in /etc/fstab, so I don't mount them here (either
+	// the kernel is doing it, or Debian is lying about init being the first
+	// process.)
+	//
+	// However, /dev/shm is neither automounted, nor in fstab, and without it
+	// Chromium won't start, so it's done manually here.
+	//
+	// (It should probably just go into my fstab to be honest, but then it seems
+	// that I'd need to manually add it every time I install a new system..)
+	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
+
+	// Parse all the configs in /etc/dainit. Finally!
+	services, err := ParseConfigs("/etc/dainit")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+	}
+
+	StartServices(services)
 
 	// Launch a get tty process.
 	// If we don't Setsid, we'll get an "inappropriate ioctl for device"
@@ -81,13 +114,16 @@ func main() {
 	cmd.Run()
 
 	// The tty exited. Kill processes, unmount filesystems and halt the system.
-	println("Stopping udevd...")
-	run("udevadm", "control", "--exit")
-	println("Killing the world...")
+	// TODO: Run shutdown scripts for services that are started instead
+	// of just sending them a SIGTERM right off the bat..
+	println("Killing everything I can find...")
 	KillAll()
-	println("unmounting filesystems...")
-	UnmountAll(append(netfs, virtfs...))
 
-	// Halt the system.
+	// This needs to be done after all the processes are dead, otherwise
+	// it will fail due to being in use.
+	println("Unmounting filesystems...")
+	UnmountAllExcept(append(netfs, virtfs...))
+
+	// Halt the system explicitly to prevent a kernel panic.
 	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
 }
