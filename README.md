@@ -7,7 +7,7 @@ your init system. (It aims to be an init system and only an init system.)
 dainit will do the following:
 
 1. Set the hostname
-2. Remount the root filesystem*
+2. Remount the root filesystem[1]
 3. Mount all other non-network filesystems and activate swap partitions
 3. Start processes with config files in /etc/dainit after their dependencies
    ("Needs") are started. See `conf/` for a sample udevd and wpa_supplicant (which
@@ -35,5 +35,5 @@ sudo update-initramfs -u
 then add `init=/sbin/dainit` to your grub configuration. (Or alternatively, make
 `/sbin/init` a symlink to `dainit`.)
 
-* This shouldn't be required, since `mount -a` should take care of it in step
+[1] This shouldn't be required, since `mount -a` should take care of it in step
   3 according to mount(8), but as far as I can tell it doesn't.
