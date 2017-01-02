@@ -1,17 +1,10 @@
-// dainit is a simple init system for Linux.
+// dainit is a simple init system for Linux intended for non-server uses
+// (ie. for a programmer's home Linux system.)
 //
-// dainit will currently do the following:
-//  1. Set the hostname
-//  2. Remount the root filesystem rw
-//  3. Start udevd to probe for devices (TODO: Find a systemd-free replacement, but udevd is
-//     what my laptop has for now...)
-//  4. Start a tty and wait for a login.
-//  5. Kill running processes, unmount filesystems, and poweroff the system once that login
-//     session ends.
+// It aims to be easy to use.
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -93,25 +86,31 @@ func main() {
 	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
 	// Parse all the configs in /etc/dainit. Finally!
-	services, err := ParseConfigs("/etc/dainit")
+	services, err := ParseServiceConfigs("/etc/dainit")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		log.Println(err)
 	}
 
 	StartServices(services)
 
-	// Launch a get tty process.
-	// If we don't Setsid, we'll get an "inappropriate ioctl for device"
-	// error upon starting the login shell.
-	cmd := exec.Command("agetty", "--noclear", "tty1")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
+	// Launch an appropriate number of getty processes on ttys.
+	if conf, err := os.Open("/etc/dainit.conf"); err != nil {
+		// If the config doesn't exist or can't be opened, use the defaults.
+		Gettys(nil, false)
+	} else {
+		if autologins, persist, err := ParseSetupConfig(conf); err != nil {
+			// We don't want to defer this because otherwise it won't
+			// get executed until the system is shutting down..
+			conf.Close()
 
-	cmd.Run()
+			// If the config couldn't be parsed, used the defaults
+			log.Println(err)
+			Gettys(nil, false)
+		} else {
+			conf.Close()
+			Gettys(autologins, persist)
+		}
+	}
 
 	// The tty exited. Kill processes, unmount filesystems and halt the system.
 	// TODO: Run shutdown scripts for services that are started instead

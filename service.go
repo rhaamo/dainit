@@ -48,12 +48,10 @@ type Service struct {
 }
 
 func StartServices(services map[ServiceType][]*Service) {
-	println("There are ", len(services), " types of service")
 	wg := sync.WaitGroup{}
 
 	startedTypes := make(map[ServiceType]bool)
-	for ty, services := range services {
-		println("Should be starting ", len(services), " types of service", ty)
+	for _, services := range services {
 		wg.Add(len(services))
 		for _, s := range services {
 			go func(s *Service) {
@@ -81,9 +79,7 @@ func StartServices(services map[ServiceType][]*Service) {
 			}(s)
 		}
 	}
-	println("Waiting for services to finish starting")
 	wg.Wait()
-	println("Done starting services?")
 }
 
 // Starts the Service s.

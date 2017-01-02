@@ -48,6 +48,15 @@ func parseLine(line string, s *Service) error {
 	return nil
 }
 
+func parseSetupLine(line string) (autologin string, persist bool) {
+	if strings.HasPrefix(line, "Autologin:") {
+		return strings.TrimSpace(strings.TrimPrefix(line, "Autologin:")), false
+	} else if strings.HasPrefix(line, "Persist:") {
+		return "", strings.TrimSpace(strings.TrimPrefix(line, "Persist:")) == "true"
+	}
+	return "", false
+}
+
 // Parses a single config file into the services it provides
 func ParseConfig(r io.Reader) (Service, error) {
 	s := Service{}
@@ -75,13 +84,17 @@ func ParseConfig(r io.Reader) (Service, error) {
 
 // Parses all the config in directory dir return a map of
 // providers of ServiceTypes from that directory.
-func ParseConfigs(dir string) (map[ServiceType][]*Service, error) {
+func ParseServiceConfigs(dir string) (map[ServiceType][]*Service, error) {
 	providers := make(map[ServiceType][]*Service)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	for _, fstat := range files {
+		if fstat.IsDir() {
+			// Mostly to skip "." and ".."
+			continue
+		}
 		f, err := os.Open(dir + "/" + fstat.Name())
 		if err != nil {
 			log.Println(err)
@@ -98,4 +111,35 @@ func ParseConfigs(dir string) (map[ServiceType][]*Service, error) {
 
 	}
 	return providers, nil
+}
+
+// Parses the file file for "Autologin:" or "Persist:" lines.
+func ParseSetupConfig(r io.Reader) (autologins []string, persist bool, err error) {
+	scanner := bufio.NewReader(r)
+	for {
+		line, err2 := scanner.ReadString('\n')
+		switch err2 {
+		case io.EOF:
+			autologin, persist2 := parseSetupLine(line)
+			if autologin != "" {
+				autologins = append(autologins, autologin)
+			}
+			if persist2 {
+				persist = persist2
+			}
+			return
+		case nil:
+			autologin, persist2 := parseSetupLine(line)
+			if autologin != "" {
+				autologins = append(autologins, autologin)
+			}
+			if persist2 {
+				persist = persist2
+			}
+		default:
+			err = err2
+			return
+		}
+	}
+	return
 }

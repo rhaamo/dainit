@@ -24,7 +24,8 @@ func compareService(s1, s2 Service) bool {
 	}
 	return s1.Name == s2.Name && s1.Startup == s2.Startup && s1.Shutdown == s2.Shutdown
 }
-func TestConfigParsing(t *testing.T) {
+
+func TestServiceConfigParsing(t *testing.T) {
 	tcs := []struct {
 		Content string
 		Service Service
@@ -86,6 +87,67 @@ Shutdown: bar
 		}
 		if !compareService(service, tc.Service) {
 			t.Errorf("Unexpected value parsing test case %d: got %v want %v", i, service, tc.Service)
+		}
+	}
+}
+func TestSetupConfigParsing(t *testing.T) {
+	tcs := []struct {
+		Content   string
+		Autologin []string
+		Persist   bool
+	}{
+		{
+			// Basic autologin
+			`Autologin: testuser`,
+			[]string{"testuser"},
+			false,
+		},
+		{
+			// Trailing newline and whitespace
+			`Autologin: test2   
+`,
+			[]string{"test2"},
+			false,
+		},
+		{
+			// Multiple tty autologin
+			`Autologin: test2   
+Autologin: foo
+`,
+			[]string{"test2", "foo"},
+			false,
+		},
+		{
+			// Persist test
+			`Persist: true`,
+			nil,
+			true,
+		},
+		{
+			// Persist and autologin test
+			"Autologin: foo\nAutologin:bar\nPersist: true",
+			[]string{"foo", "bar"},
+			true,
+		},
+	}
+	for i, tc := range tcs {
+		r := strings.NewReader(tc.Content)
+		autologins, persist, err := ParseSetupConfig(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(autologins) != len(tc.Autologin) {
+			t.Errorf("Incorrect number of autologins for test case %d: got %v want %v", i, len(autologins), len(tc.Autologin))
+		} else {
+			for j := range tc.Autologin {
+				if autologins[j] != tc.Autologin[j] {
+					t.Errorf("Incorrect autologin for test case %d[%d]: got %v want %v", i, j, autologins[j], tc.Autologin[j])
+				}
+			}
+		}
+		if persist != tc.Persist {
+			t.Errorf("Incorrect persistence for test case %d: got %v want %v", i, persist, tc.Persist)
 		}
 	}
 }

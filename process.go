@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"syscall"
@@ -32,14 +33,14 @@ func KillAll() {
 	// Try to send a sigterm
 	pids, err := getAllProcesses()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		log.Println(err)
 	}
 	for _, proc := range pids {
 		proc.Signal(syscall.SIGTERM)
 	}
 
 	if err := waitForDeath(); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
+		log.Println(err)
 	}
 	// They didn't respond to sigterm after a minute, so be mean and send a SIGKILL
 	pids, _ = getAllProcesses()
@@ -52,7 +53,7 @@ func KillAll() {
 	}
 
 	if err := waitForDeath(); err != nil {
-		fmt.Fprintf(os.Stderr, "%v :(\n", err)
+		log.Println(err, " :(")
 	}
 }
 
@@ -88,7 +89,7 @@ func getAllProcesses() ([]*os.Process, error) {
 		}
 		proc, err := os.FindProcess(pid)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
+			log.Println(err)
 		}
 		rprocs = append(rprocs, proc)
 	}
