@@ -16,7 +16,7 @@ dainit will do the following:
 5. Kill running processes, unmount filesystems, and poweroff the system once that
    login session ends.
 
-(The way step 3 is handled isn't very elegant and will likely fail if you have too
+(The way step 4 is handled isn't very elegant and will likely fail if you have too
 many slow startup processes.)
 
 You can also create a file /etc/dainit.conf for some basic configuration. If
