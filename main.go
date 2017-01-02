@@ -93,6 +93,8 @@ func main() {
 
 	StartServices(services)
 
+	go reapChildren()
+
 	// Launch an appropriate number of getty processes on ttys.
 	if conf, err := os.Open("/etc/dainit.conf"); err != nil {
 		// If the config doesn't exist or can't be opened, use the defaults.
