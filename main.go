@@ -33,12 +33,14 @@ func SetHostname(hostname string) {
 	proc, err := os.Create("/proc/sys/kernel/hostname")
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	defer proc.Close()
 
 	n, err := proc.Write([]byte(hostname))
 	if n != len(hostname) || err != nil {
 		log.Println(err)
+		return
 	}
 }
 

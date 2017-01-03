@@ -34,6 +34,7 @@ func KillAll() {
 	pids, err := getAllProcesses()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	for _, proc := range pids {
 		proc.Signal(syscall.SIGTERM)
@@ -90,6 +91,7 @@ func getAllProcesses() ([]*os.Process, error) {
 		proc, err := os.FindProcess(pid)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		rprocs = append(rprocs, proc)
 	}
