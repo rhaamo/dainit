@@ -37,7 +37,7 @@ func SetHostname(hostname []byte) {
 	}
 	defer proc.Close()
 
-	n, err := proc.Write(hostname)
+	_, err = proc.Write(hostname)
 	if err != nil {
 		log.Println(err)
 		return
