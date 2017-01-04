@@ -98,6 +98,7 @@ func ParseServiceConfigs(dir string) (map[ServiceType][]*Service, error) {
 		f, err := os.Open(dir + "/" + fstat.Name())
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		s, err := ParseConfig(f)
 		f.Close()
@@ -141,5 +142,4 @@ func ParseSetupConfig(r io.Reader) (autologins []string, persist bool, err error
 			return
 		}
 	}
-	return
 }

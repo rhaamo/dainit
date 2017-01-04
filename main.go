@@ -29,16 +29,18 @@ func runquiet(cmd string, args ...string) error {
 }
 
 // Set's the hostname for the kernel.
-func SetHostname(hostname string) {
+func SetHostname(hostname []byte) {
 	proc, err := os.Create("/proc/sys/kernel/hostname")
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	defer proc.Close()
 
-	n, err := proc.Write([]byte(hostname))
-	if n != len(hostname) || err != nil {
+	n, err := proc.Write(hostname)
+	if err != nil {
 		log.Println(err)
+		return
 	}
 }
 
@@ -62,7 +64,7 @@ func main() {
 
 	// Set the hostname for getty to be happy.
 	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
-		SetHostname(string(hostname))
+		SetHostname(hostname)
 	}
 
 	// There's a little (dare I say, a lot?) of black magic that seems to

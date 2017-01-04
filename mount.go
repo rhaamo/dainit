@@ -19,6 +19,7 @@ func Mount(typ, device, dir, opts string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0775); err != nil {
 			log.Printf("Could not create mount point %v: %v\n", dir, err)
+			return
 		}
 	}
 	if err := run("mount", "-t", typ, device, dir, "-o", opts); err != nil {
