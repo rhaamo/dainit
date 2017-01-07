@@ -50,6 +50,7 @@ type Service struct {
 func StartServices(services map[ServiceType][]*Service) {
 	wg := sync.WaitGroup{}
 
+	var startedMu *sync.RWMutex = &sync.RWMutex{}
 	startedTypes := make(map[ServiceType]bool)
 	for _, services := range services {
 		wg.Add(len(services))
@@ -59,7 +60,7 @@ func StartServices(services map[ServiceType][]*Service) {
 				// infinite loop when they're not.
 				// (TODO(2): Prove N=NP in order to do the above efficiently.)
 				for satisfied, tries := false, 0; satisfied == false && tries < 60; tries++ {
-					satisfied = s.NeedsSatisfied(startedTypes)
+					satisfied = s.NeedsSatisfied(startedTypes, startedMu)
 					time.Sleep(2 * time.Second)
 
 				}
@@ -70,11 +71,11 @@ func StartServices(services map[ServiceType][]*Service) {
 
 				}
 
-				// We don't use a mutex to handle startedTypes, because things only ever get set from false
-				// to true, so if there's a race it's a race to set the variable to the same thing.
+				startedMu.Lock()
 				for _, t := range s.Provides {
 					startedTypes[t] = true
 				}
+				startedMu.Unlock()
 				wg.Done()
 			}(s)
 		}
@@ -99,7 +100,9 @@ func (s *Service) Start() error {
 }
 
 // Checks if all of s's needs are satified by the passed list of provided types
-func (s Service) NeedsSatisfied(started map[ServiceType]bool) bool {
+func (s Service) NeedsSatisfied(started map[ServiceType]bool, mu *sync.RWMutex) bool {
+	mu.RLock()
+	defer mu.RUnlock()
 	for _, st := range s.Needs {
 		if !started[st] {
 			return false
