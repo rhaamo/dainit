@@ -67,7 +67,6 @@ func main() {
 	}
 	println("[lutra] Current $PATH is:", os.Getenv("PATH"))
 
-
 	// Remount root as rw.
 	//
 	// This should be handled by mount -a according to mount(8), since the flags that
@@ -75,6 +74,9 @@ func main() {
 	// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
 	println("[lutra] Remounting root filesystem")
 	Remount("/")
+
+	// Start socket in background
+	go socketInitctl()
 
 	// Mount local filesytems
 	println("[lutra] Mounting local file systems")
