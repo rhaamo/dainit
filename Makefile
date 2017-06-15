@@ -1,5 +1,5 @@
-# LDFLAGS += -X "/setting.BuildTime=$(shell date -u '+%Y-%m-%d %I:%M:%S %Z')"
-# LDFLAGS += -X "/setting.BuildGitHash=$(shell git rev-parse HEAD)"
+LDFLAGS += -X "main.LutraBuildTime=$(shell date -u '+%Y-%m-%d %I:%M:%S %Z')"
+LDFLAGS += -X "main.LutraBuildGitHash=$(shell git rev-parse HEAD)"
 
 OS := $(shell uname)
 

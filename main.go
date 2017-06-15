@@ -10,6 +10,14 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"strings"
+)
+
+var (
+	LutraVersion = "0.1"
+	// Theses two last should only filled by LDFLAGS, see Makefile
+	LutraBuildTime string
+	LutraBuildGitHash string
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -45,16 +53,31 @@ func SetHostname(hostname []byte) {
 }
 
 func main() {
+	// First of first, who are we ?
+	println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	println("~~ LutraInit version", LutraVersion, "-", LutraBuildGitHash, "~~")
+	println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+	// First of all, we need to be sure we have a correct PATH setted
+	// This is usefull if we use lutrainit in an initramfs since PATH would be unset
+	curEnvPath := os.Getenv("PATH")
+	if len(strings.TrimSpace(curEnvPath)) == 0 {
+		println("[lutra] Empty $PATH, fixed.")
+		os.Setenv("PATH", "/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin")
+	}
+	println("[lutra] Current $PATH is:", os.Getenv("PATH"))
+
+
 	// Remount root as rw.
 	//
 	// This should be handled by mount -a according to mount(8), since the flags that
 	// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
 	// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
-	println("Remounting root filesystem")
+	println("[lutra] Remounting root filesystem")
 	Remount("/")
 
 	// Mount local filesytems
-	println("Mounting local file systems")
+	println("[lutra] Mounting local file systems")
 	netfs := []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
 	virtfs := []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
 
@@ -65,6 +88,8 @@ func main() {
 	// Set the hostname for getty to be happy.
 	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
 		SetHostname(hostname)
+	} else {
+		println("[lutra] Error setting hostname", err)
 	}
 
 	// There's a little (dare I say, a lot?) of black magic that seems to
@@ -119,12 +144,12 @@ func main() {
 	// The tty exited. Kill processes, unmount filesystems and halt the system.
 	// TODO: Run shutdown scripts for services that are started instead
 	// of just sending them a SIGTERM right off the bat..
-	println("Killing everything I can find...")
+	println("[lutra] Killing everything I can find...")
 	KillAll()
 
 	// This needs to be done after all the processes are dead, otherwise
 	// it will fail due to being in use.
-	println("Unmounting filesystems...")
+	println("[lutra] Unmounting filesystems...")
 	UnmountAllExcept(append(netfs, virtfs...))
 
 	// Halt the system explicitly to prevent a kernel panic.
