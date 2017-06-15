@@ -1,0 +1,8 @@
+hash: 55108e601a31872d1540a7508fe8860798b701882c7f7e1e0c55df4f8c540876
+updated: 2017-06-15T22:35:04.684147478+02:00
+imports:
+- name: github.com/go-clog/clog
+  version: 8492a6faa632c31ba82f562b53b4a6e5eacf2732
+- name: github.com/valyala/gorpc
+  version: 908281bef77441f2d0ec1792189b4032a1dace0c
+testImports: []
