@@ -1,4 +1,4 @@
-package lutractl
+package main
 
 import (
 	"github.com/urfave/cli"
@@ -16,10 +16,11 @@ var (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "lutractl"
+	app.Name = "lutractl_ctl"
 	app.Usage = "lutra init control client"
 	app.Version = LutraVersion
 	app.Commands = []cli.Command {
+		CmdVersion,
 	}
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 	app.Run(os.Args)
