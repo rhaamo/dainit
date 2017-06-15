@@ -3,16 +3,8 @@ LDFLAGS += -X "main.LutraBuildGitHash=$(shell git rev-parse HEAD)"
 
 OS := $(shell uname)
 
-DATA_FILES := $(shell find conf | sed 's/ /\\ /g')
-
-BUILD_FLAGS:=-o lutrainit -v
 TAGS=
-NOW=$(shell date -u '+%Y%m%d%I%M%S')
 GOVET=go tool vet -composites=false -methods=false -structtags=false
-
-export CGO_ENABLED=1
-export GOOS=linux
-export GOARCH=amd64
 
 .PHONY: build clean
 
@@ -24,13 +16,16 @@ govet:
 	$(GOVET) main.go
 
 build:
-	go build $(BUILD_FLAGS) -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+	@echo "Building init"
+	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -v -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+	@echo "Building client"
+	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -v -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
 
 build-dev: govet
-	go build $(BUILD_FLAGS) -tags '$(TAGS)'
+	go build -o lutrainit -v -tags '$(TAGS)'
 
 build-dev-race: govet
-	go build $(BUILD_FLAGS) -race -tags '$(TAGS)'
+	go build -o lutrainit -v -race -tags '$(TAGS)'
 
 clean:
 	find . -name ".DS_Store" -delete
