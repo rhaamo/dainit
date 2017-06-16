@@ -1,4 +1,4 @@
-package: github.com/rhaamo/lutrainit/lutractl_ctl
+package: github.com/rhaamo/lutrainit/lutractl
 import:
 - package: github.com/urfave/cli
   version: ^1.19.1

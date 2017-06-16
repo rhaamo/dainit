@@ -6,7 +6,7 @@ package tools_test
 import (
 	. "github.com/smartystreets/goconvey/convey"
 
-	. "dev.sigpipe.me/dashie/git.txt/stuff/tool"
+	. "github.com/rhaamo/lutrainit/lutrainit/tools"
 	"testing"
 )
 

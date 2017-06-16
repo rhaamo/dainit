@@ -1,8 +1,29 @@
-hash: 55108e601a31872d1540a7508fe8860798b701882c7f7e1e0c55df4f8c540876
-updated: 2017-06-15T22:35:04.684147478+02:00
+hash: 032ed633d38500662252174f6815194f2309dbf2fbdfb08cf09690687a043a6a
+updated: 2017-06-16T07:28:16.611217159+02:00
 imports:
 - name: github.com/go-clog/clog
   version: 8492a6faa632c31ba82f562b53b4a6e5eacf2732
+- name: github.com/rhaamo/lutrainit
+  version: fbcb1d13c9ba123a6e3a8f452af1d5bf38d65e3a
+  subpackages:
+  - shared/ipc
+- name: github.com/smartystreets/goconvey
+  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  subpackages:
+  - convey
+  - convey/gotest
+  - convey/reporting
 - name: github.com/valyala/gorpc
   version: 908281bef77441f2d0ec1792189b4032a1dace0c
-testImports: []
+testImports:
+- name: github.com/gopherjs/gopherjs
+  version: dc374d32704510cb387457180ca9d5193978b555
+  subpackages:
+  - js
+- name: github.com/jtolds/gls
+  version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
+- name: github.com/smartystreets/assertions
+  version: 4ea54c1f28ad3ae597e76607dea3871fa177e263
+  subpackages:
+  - internal/go-render/render
+  - internal/oglematchers

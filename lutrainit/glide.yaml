@@ -1,5 +1,7 @@
-package: github.com/rhaamo/lutrainit
+package: github.com/rhaamo/lutrainit/lutrainit
 import:
 - package: github.com/go-clog/clog
   version: ^1.1.1
 - package: github.com/valyala/gorpc
+- package: github.com/smartystreets/goconvey
+  version: ^1.6.2
