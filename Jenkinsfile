@@ -20,7 +20,6 @@ node('linux && x86_64 && go') {
 
             sh 'go get -u github.com/golang/lint/golint'
             sh 'go get -u github.com/tebeka/go2xunit'
-            sh 'go get -u github.com/jteeuwen/go-bindata/...'
             sh 'go get github.com/Masterminds/glide'
         }
 
@@ -37,7 +36,8 @@ node('linux && x86_64 && go') {
         String buildNumber = "${appVersion}-${env.BUILD_NUMBER}"
 
         stage('Install dependencies') {
-            sh 'glide install'
+            sh 'cd lutrainit && glide install'
+            sh 'cd lutractl && glide install'
         }
 
         stage('Test') {
@@ -48,7 +48,7 @@ node('linux && x86_64 && go') {
             // The real tests then publish the results
             try {
                 // broken due to some go /vendor directory crap
-                sh 'go test -v $(go list ./... | grep -v /vendor/) > tests.txt'
+                sh 'GOOS=linux GOARCH=amd64 go test -v $(go list ./... | grep -v /vendor/) > tests.txt'
             } catch (err) {
                 if (currentBuild.result == 'UNSTABLE')
                     currentBuild.result = 'FAILURE'
