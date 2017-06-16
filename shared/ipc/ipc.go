@@ -49,3 +49,16 @@ type IpcSysStatus struct {
 	PauseNs      string // circular buffer of recent GC pause times, most recent at [(NumGC+255)%256]
 	NumGC        uint32
 }
+
+// IpcProcessesStat
+type IpcProcess struct {
+	Name		string
+	RunState	uint8
+}
+
+type IpcServiceType string
+
+type IpcAskStatus struct {
+	Name		string
+	All			bool
+}

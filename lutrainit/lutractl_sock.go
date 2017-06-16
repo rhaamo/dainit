@@ -14,43 +14,39 @@ var (
 )
 
 func socketInitctl() {
-	gorpc.RegisterType(&ipc.IpcVersion{})
-	gorpc.RegisterType(&ipc.IpcSysStatus{})
+	d := gorpc.NewDispatcher()
 
-	s := gorpc.NewUnixServer("/run/ottersock", handleMessage)
+	// Returns the init daemon version
+	d.AddFunc("version", func() *ipc.IpcVersion {
+		return &ipc.IpcVersion{
+			ServerVersion: LutraVersion,
+			ServerBuildHash: LutraBuildGitHash,
+			ServerBuildTime: LutraBuildTime,
+		}
+	})
+
+	// Returns the daemon system stats
+	d.AddFunc("stats", func() *ipc.IpcSysStatus {
+		return returnStats()
+	})
+
+	// Returns processes statuses
+	d.AddFunc("status", func(status *ipc.IpcAskStatus) map[ipc.IpcServiceType]*ipc.IpcProcess {
+		println("wanting status")
+		println("Size of the QueueServices1:", len(QueueServices))
+		return returnStatus(status)
+	})
+
+	s := gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
 	if err := s.Serve(); err != nil {
 		println("[lutra][socket] Starting GoRPC error", err)
 		return
 	}
 	println("[lutra][socket] GoRPC started", s.Addr)
-
 	defer s.Stop()
 }
 
-func handleMessage(clientAddr string, request interface{}) interface{} {
-	fmt.Printf("[lutra][socket] Got message: '%s'\n", request)
-
-	switch request {
-	case "version":
-		return returnVersion()
-	case "stats":
-		return returnStats()
-	default:
-		fmt.Printf("[lutra][socket] Got unknown RPC '%s'", request)
-	}
-
-	return request
-}
-
-func returnVersion() interface{} {
-	return &ipc.IpcVersion{
-		ServerVersion: LutraVersion,
-		ServerBuildHash: LutraBuildGitHash,
-		ServerBuildTime: LutraBuildTime,
-	}
-}
-
-func returnStats() interface{} {
+func returnStats() *ipc.IpcSysStatus {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
 
@@ -90,4 +86,25 @@ func returnStats() interface{} {
 		PauseNs: fmt.Sprintf("%.3fs", float64(m.PauseNs[(m.NumGC+255)%256])/1000/1000/1000),
 		NumGC: m.NumGC,
 	}
+}
+
+func returnStatus(req *ipc.IpcAskStatus) map[ipc.IpcServiceType]*ipc.IpcProcess {
+	var statuses map[ipc.IpcServiceType]*ipc.IpcProcess
+
+	println("Size of the QueueServices:", len(QueueServices))
+
+	for k, v := range QueueServices {
+		println("k:", k)
+		println("v:", v)
+	}
+
+	if req.All {
+		//for k, v := range QueueServices {
+		//	statuses[ipc.IpcServiceType(k)] = &ipc.IpcProcess{Name: v.Name, RunState: v.RunState}
+		//}
+	} else {
+		// TODO FIXME not currently managed
+	}
+
+	return statuses
 }

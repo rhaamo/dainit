@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/urfave/cli"
 	"github.com/rhaamo/lutrainit/shared/ipc"
-	"github.com/valyala/gorpc"
 	"fmt"
 )
 
@@ -16,13 +15,7 @@ var CmdVersion = cli.Command {
 }
 
 func getVersion(ctx *cli.Context) error {
-	gorpc.RegisterType(&ipc.IpcVersion{})
-
-	c := gorpc.NewUnixClient("/run/ottersock")
-	c.Start()
-	defer c.Stop()
-
-	res, err := c.Call("version")
+	res, err := GorpcDispatcherClient.Call("version", nil)
 
 	resIpc := res.(*ipc.IpcVersion)
 

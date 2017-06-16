@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/urfave/cli"
 	"github.com/rhaamo/lutrainit/shared/ipc"
-	"github.com/valyala/gorpc"
 	"fmt"
 )
 
@@ -16,13 +15,7 @@ var CmdStats = cli.Command {
 }
 
 func getStats(ctx *cli.Context) error {
-	gorpc.RegisterType(&ipc.IpcSysStatus{})
-
-	c := gorpc.NewUnixClient("/run/ottersock")
-	c.Start()
-	defer c.Stop()
-
-	res, err := c.Call("stats")
+	res, err := GorpcDispatcherClient.Call("stats", nil)
 
 	resIpc := res.(*ipc.IpcSysStatus)
 

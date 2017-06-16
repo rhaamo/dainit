@@ -18,6 +18,9 @@ var (
 	// Theses two last should only filled by LDFLAGS, see Makefile
 	LutraBuildTime string
 	LutraBuildGitHash string
+
+	// QueueServices is the in-memory map list of processes managed by init services
+	QueueServices map[ServiceType][]*Service
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -115,15 +118,21 @@ func main() {
 	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
 	// Parse all the configs in /etc/dainit. Finally!
-	services, err := ParseServiceConfigs("/etc/lutrainit/lutra.d")
+	QueueServices, err := ParseServiceConfigs("/etc/lutrainit/lutra.d")
 	if err != nil {
 		log.Println(err)
 	}
 
-	StartServices(services)
+	println("first, len", len(QueueServices))
+
+	StartServices(QueueServices)
+
+	println("second, len", len(QueueServices))
 
 	// Kick Zombies out in the background
 	go reapChildren()
+
+	println("third, len", len(QueueServices))
 
 	// Launch an appropriate number of getty processes on ttys.
 	if conf, err := os.Open("/etc/lutrainit/lutra.conf"); err != nil {
