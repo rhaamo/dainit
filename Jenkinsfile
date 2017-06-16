@@ -69,7 +69,6 @@ node('linux && x86_64 && go') {
         }
 
         stage('Build') {
-            sh 'rm bindata/bindata.go'
             sh "make build GOOS=linux GOARCH=amd64"
         }
 
