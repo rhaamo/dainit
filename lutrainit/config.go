@@ -95,6 +95,12 @@ func ParseServiceConfigs(dir string) (map[ServiceType][]*Service, error) {
 			// Mostly to skip "." and ".."
 			continue
 		}
+
+		// We only want to parse files ending with .service
+		if !strings.HasSuffix(fstat.Name(), ".service") {
+			continue
+		}
+
 		f, err := os.Open(dir + "/" + fstat.Name())
 		if err != nil {
 			log.Println(err)

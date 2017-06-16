@@ -19,12 +19,14 @@ lutrainit will do the following:
 (The way step 4 is handled isn't very elegant and will likely fail if you have too
 many slow startup processes.)
 
-You can also create a file /etc/dainit.conf for some basic configuration. If
-there are any lines of the form "Autologin: username" it will automatically log in
+You can also create a file `/etc/lutrainit/lutra.conf` for some basic configuration.
+
+If there are any lines of the form `Autologin: username` it will automatically log in
 as that username. (If there's multiple autologin directives, it will create the
-appropriate number of ttys.) If any line contains "Persist: true", then when a tty
-exits, it'll respawn the tty instead of powering down the system once all the ttys
-are gone.
+appropriate number of ttys.)
+If any line contains `Persist: true`, then when a tty exits, it'll respawn the tty instead of powering down the system once all the ttys are gone.
+
+See the `conf/` folder for what you can put in `/etc/lutrainit/` including services files in `/etc/lutrainit/lutra.d/`.
 
 ## lutractl
 

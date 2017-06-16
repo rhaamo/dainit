@@ -115,7 +115,7 @@ func main() {
 	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
 	// Parse all the configs in /etc/dainit. Finally!
-	services, err := ParseServiceConfigs("/etc/dainit")
+	services, err := ParseServiceConfigs("/etc/lutrainit/lutra.d")
 	if err != nil {
 		log.Println(err)
 	}
@@ -125,7 +125,7 @@ func main() {
 	go reapChildren()
 
 	// Launch an appropriate number of getty processes on ttys.
-	if conf, err := os.Open("/etc/dainit.conf"); err != nil {
+	if conf, err := os.Open("/etc/lutrainit/lutra.conf"); err != nil {
 		// If the config doesn't exist or can't be opened, use the defaults.
 		Gettys(nil, false)
 	} else {
