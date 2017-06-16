@@ -122,6 +122,7 @@ func main() {
 
 	StartServices(services)
 
+	// Kick Zombies out in the background
 	go reapChildren()
 
 	// Launch an appropriate number of getty processes on ttys.
