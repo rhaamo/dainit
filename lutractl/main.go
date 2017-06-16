@@ -21,6 +21,7 @@ func main() {
 	app.Version = LutraVersion
 	app.Commands = []cli.Command {
 		CmdVersion,
+		CmdStats,
 	}
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 	app.Run(os.Args)
