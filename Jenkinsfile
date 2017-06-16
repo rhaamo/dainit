@@ -74,24 +74,24 @@ node('linux && x86_64 && go') {
 
         stage('Archivate Artifacts') {
             // this doesn't works
-            //zip dir: '${env.WORKSPACE}/', zipFile: "${env.WORKSPACE}/git.txt.linux-${buildNumber}.zip", glob: 'binaries/**,conf,LICENSE*,README*,lint.txt,tests.txt', archive: true
+            //zip dir: '${env.WORKSPACE}/', zipFile: "${env.WORKSPACE}/${applicationName}.linux-${buildNumber}.zip", glob: 'binaries/**,conf,LICENSE*,README*,lint.txt,tests.txt', archive: true
             sh 'ls'
             sh """
-            mkdir lutrainit.linux-${buildNumber}
-            cp lutrainit/lutrainit lutractl/lutractl git.txt.linux-${buildNumber}
-            sha256sum git.txt.linux-${buildNumber}/lutrainit git.txt.linux-${buildNumber}/lutractl > git.txt.linux-${buildNumber}/sha256.txt
-            cp -r conf git.txt.linux-${buildNumber}
-            cp LICENSE* git.txt.linux-${buildNumber}
-            cp README.md git.txt.linux-${buildNumber}
-            cp CONFIGURATION.md git.txt.linux-${buildNumber}
-            cp lint.txt tests.txt git.txt.linux-${buildNumber}
-            zip -r git.txt.linux-${buildNumber}.zip git.txt.linux-${buildNumber}
-            rm -rf git.txt.linux-${buildNumber}
+            mkdir ${applicationName}.linux-${buildNumber}
+            cp lutrainit/lutrainit lutractl/lutractl ${applicationName}.linux-${buildNumber}
+            sha256sum ${applicationName}.linux-${buildNumber}/lutrainit ${applicationName}.linux-${buildNumber}/lutractl > ${applicationName}.linux-${buildNumber}/sha256.txt
+            cp -r conf ${applicationName}.linux-${buildNumber}
+            cp LICENSE* ${applicationName}.linux-${buildNumber}
+            cp README.md ${applicationName}.linux-${buildNumber}
+            cp CONFIGURATION.md ${applicationName}.linux-${buildNumber}
+            cp lint.txt tests.txt ${applicationName}.linux-${buildNumber}
+            zip -r ${applicationName}.linux-${buildNumber}.zip ${applicationName}.linux-${buildNumber}
+            rm -rf ${applicationName}.linux-${buildNumber}
             """
 
             archiveArtifacts artifacts: 'lutractl/lutractl,lutrainit/lutrainit,conf,LICENSE*,README*', fingerprint: true
             archiveArtifacts artifacts: 'lint.txt,tests.txt', fingerprint: true
-            archiveArtifacts artifacts: "git.txt.linux-${buildNumber}.zip", fingerprint: true
+            archiveArtifacts artifacts: "${applicationName}.linux-${buildNumber}.zip", fingerprint: true
         }
     } // ws
 } // node
