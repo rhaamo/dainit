@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"sync"
 	"time"
+	"github.com/rhaamo/lutrainit/shared/ipc"
 )
 
 type runState uint8
@@ -89,13 +90,25 @@ func (s *Service) Start() error {
 		return fmt.Errorf("Service %v is %v", s.Name, s.state.String())
 	}
 	s.state = starting
+	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Starting
+	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		s.state = errored
+		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Errored
+		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+
 		return err
 	}
 	s.state = started
+	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
+	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+
 	return nil
 }
 
