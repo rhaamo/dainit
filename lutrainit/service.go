@@ -39,13 +39,14 @@ func (rs runState) String() string {
 }
 
 type Service struct {
-	Name     ServiceName
-	Startup  Command
-	Shutdown Command
-	Provides []ServiceType
-	Needs    []ServiceType
+	Name     	ServiceName
+	Description	string
+	Startup  	Command
+	Shutdown 	Command
+	Provides 	[]ServiceType
+	Needs    	[]ServiceType
 
-	state runState
+	state 		runState
 }
 
 func StartServices() {

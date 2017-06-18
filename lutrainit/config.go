@@ -42,9 +42,13 @@ func parseLine(line string, s *Service) error {
 			return fmt.Errorf("Shutdown already set")
 		}
 		s.Shutdown = Command(strings.TrimSpace(strings.TrimPrefix(line, "Shutdown:")))
-	} else if strings.HasPrefix(line, "# ") {
+	} else if strings.HasPrefix(line, "Name:") {
 		if s.Name == "" {
-			s.Name = ServiceName(strings.TrimSpace(strings.TrimPrefix(line, "# ")))
+			s.Name = ServiceName(strings.TrimSpace(strings.TrimPrefix(line, "Name:")))
+		}
+	} else if strings.HasPrefix(line, "Description:") {
+		if s.Description == "" {
+			s.Description = strings.TrimSpace(strings.TrimPrefix(line, "Description:"))
 		}
 	}
 	return nil
@@ -120,7 +124,7 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		// Populate the Loaded Services thingy
 		ipcLoadedService :=  &ipc.IpcLoadedService{
 			Name: ipc.ServiceName(s.Name),
-			Description: "", // currently not used
+			Description: s.Description,
 		}
 
 		// If we are not reloading, set initial state and actions

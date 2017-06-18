@@ -32,7 +32,7 @@ func TestServiceConfigParsing(t *testing.T) {
 	}{
 		{
 			// Test the basic parser (with no trailing newline)
-			`# TestService
+			`Name: TestService
 Needs: stuff
 Provides: otherstuff
 Startup: foo
@@ -47,7 +47,7 @@ Shutdown: bar`,
 		},
 		{
 			// Test a multi-provider
-			`# TestService
+			`Name: TestService
 Needs: stuff
 Provides: otherstuff
 Provides: otherstuff2
@@ -64,7 +64,7 @@ Startup: foo
 		},
 		{
 			// Other form of multiprovider
-			`# TestService
+			`Name: TestService
 Needs: stuff
 Provides: otherstuff is also, otherstuff2
 Startup: foo
