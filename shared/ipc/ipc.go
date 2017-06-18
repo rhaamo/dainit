@@ -67,6 +67,8 @@ type IpcLoadedService struct {
 
 	LastAction		LastAction
 	LastActionAt	int64		// Timestamp of the last action (UTC)
+	LastMessage		string
+	LastKnownPID	int
 
 	Type			string // forking or simple
 	PIDFile			string

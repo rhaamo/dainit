@@ -62,6 +62,8 @@ func parseLine(line string, s *Service) error {
 				s.Type = "simple"
 			case "forking":
 				s.Type = "forking"
+			case "oneshot":
+				s.Type = "oneshot"
 			default:
 				fmt.Printf("Invalid service type: %s, forcing Type=simple\n", serviceType)
 				s.Type = "simple"
@@ -142,6 +144,8 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		ipcLoadedService :=  &ipc.IpcLoadedService{
 			Name: ipc.ServiceName(s.Name),
 			Description: s.Description,
+			PIDFile: s.PIDFile,
+			Type: s.Type,
 		}
 
 		// If we are not reloading, set initial state and actions

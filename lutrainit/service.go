@@ -70,8 +70,16 @@ func StartServices() {
 
 				}
 				if s.state == notStarted {
-					if err := s.Start(); err != nil {
-						log.Println(err)
+					// Start the service
+					if s.Type == "oneshot" || s.Type == "forking" {
+						if err := s.Start(); err != nil {
+							log.Println(err)
+						}
+					} else if s.Type == "simple" {
+						go s.StartSimple()
+					} else {
+						// What are you doing here ?
+						fmt.Printf("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
 					}
 
 				}
@@ -114,6 +122,45 @@ func (s *Service) Start() error {
 	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
 
 	return nil
+}
+
+func(s *Service) StartSimple() {
+	s.state = starting
+	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Starting
+	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+	LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+
+	cmd := exec.Command("sh", "-c", s.Startup.String())
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		log.Printf("Service %s exited with error: %s", s.Name, err)
+		s.state = errored
+		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Errored
+		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
+		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+		return
+	}
+	// Waiting for the command to finish
+	s.state = started
+	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
+	LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = cmd.Process.Pid
+
+	err := cmd.Wait()
+	if err != nil {
+		log.Printf("Service %s finished with error: %s", s.Name, err)
+		s.state = stopped
+		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
+		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
+		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+	} else {
+		s.state = stopped
+		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
+		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Stop
+	}
+
 }
 
 // Checks if all of s's needs are satified by the passed list of provided types
