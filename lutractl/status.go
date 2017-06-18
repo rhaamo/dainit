@@ -15,15 +15,28 @@ var CmdStatus = cli.Command {
 	Flags: []cli.Flag{},
 }
 
-// TODO: ability to get only one process status
-
 func getStatus(ctx *cli.Context) error {
-	req := &ipc.IpcAskStatus{All: true}
 
-	// Ask status for all processes
+	req := &ipc.IpcAskStatus{}
+
+	if ctx.Args().Present() {
+		req.Name = ctx.Args().First()
+		req.All = false
+	} else {
+		req.All = true
+	}
+
 	res, err := GorpcDispatcherClient.Call("status", req)
 
 	resIpc := res.(map[ipc.ServiceName]*ipc.IpcLoadedService)
+
+	if len(resIpc) == 0 && !req.All {
+		fmt.Printf("No service matching '%s'\n", req.Name)
+		return nil
+	} else if len(resIpc) == 0 && req.All {
+		fmt.Printf("No statuses returned at all, Houston, we've a problem.\n")
+		return nil
+	}
 
 	for _, loadedService := range resIpc {
 		fmt.Printf("Service: %s, of type %s\n", loadedService.Name, loadedService.Type)
