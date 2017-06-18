@@ -47,12 +47,12 @@ type Service struct {
 	state runState
 }
 
-func StartServices(services map[ServiceType][]*Service) {
+func StartServices() {
 	wg := sync.WaitGroup{}
 
 	var startedMu *sync.RWMutex = &sync.RWMutex{}
 	startedTypes := make(map[ServiceType]bool)
-	for _, services := range services {
+	for _, services := range StartupServices {
 		wg.Add(len(services))
 		for _, s := range services {
 			go func(s *Service) {

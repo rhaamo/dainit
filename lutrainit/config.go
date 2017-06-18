@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"strings"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"time"
 )
 
 type ServiceName string
@@ -84,11 +86,10 @@ func ParseConfig(r io.Reader) (Service, error) {
 
 // Parses all the config in directory dir return a map of
 // providers of ServiceTypes from that directory.
-func ParseServiceConfigs(dir string) (map[ServiceType][]*Service, error) {
-	providers := make(map[ServiceType][]*Service)
+func ParseServiceConfigs(dir string, reloading bool) error {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	for _, fstat := range files {
 		if fstat.IsDir() {
@@ -113,11 +114,26 @@ func ParseServiceConfigs(dir string) (map[ServiceType][]*Service, error) {
 			continue
 		}
 		for _, t := range s.Provides {
-			providers[t] = append(providers[t], &s)
+			StartupServices[t] = append(StartupServices[t], &s)
 		}
 
+		// Populate the Loaded Services thingy
+		ipcLoadedService :=  &ipc.IpcLoadedService{
+			Name: ipc.ServiceName(s.Name),
+			Description: "", // currently not used
+		}
+
+		// If we are not reloading, set initial state and actions
+		if !reloading {
+			ipcLoadedService.State = ipc.NotStarted
+			ipcLoadedService.LastAction = ipc.Unknown
+			ipcLoadedService.LastActionAt = time.Now().UTC().Unix()
+		}
+
+		LoadedServices[ipc.ServiceName(s.Name)] = ipcLoadedService
+
 	}
-	return providers, nil
+	return nil
 }
 
 // Parses the file file for "Autologin:" or "Persist:" lines.

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"syscall"
 	"strings"
+	"github.com/rhaamo/lutrainit/shared/ipc"
 )
 
 var (
@@ -19,8 +20,11 @@ var (
 	LutraBuildTime string
 	LutraBuildGitHash string
 
-	// QueueServices is the in-memory map list of processes managed by init services
-	QueueServices map[ServiceType][]*Service
+	// StartupServices is the in-memory map list of processes started on a full-start boot
+	StartupServices = make(map[ServiceType][]*Service)
+
+	// LoadedServices is the list of services loaded, with last known state
+	LoadedServices = make(map[ipc.ServiceName]*ipc.IpcLoadedService)
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -118,21 +122,16 @@ func main() {
 	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
 	// Parse all the configs in /etc/dainit. Finally!
-	QueueServices, err := ParseServiceConfigs("/etc/lutrainit/lutra.d")
+	err := ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
 	if err != nil {
 		log.Println(err)
 	}
 
-	println("first, len", len(QueueServices))
-
-	StartServices(QueueServices)
-
-	println("second, len", len(QueueServices))
+	// Start all services from StartupServices in the right Needs/Provide order
+	StartServices()
 
 	// Kick Zombies out in the background
 	go reapChildren()
-
-	println("third, len", len(QueueServices))
 
 	// Launch an appropriate number of getty processes on ttys.
 	if conf, err := os.Open("/etc/lutrainit/lutra.conf"); err != nil {

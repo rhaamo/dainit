@@ -4,6 +4,7 @@ import (
 	"github.com/urfave/cli"
 	"github.com/rhaamo/lutrainit/shared/ipc"
 	"fmt"
+	"time"
 )
 
 var CmdStatus = cli.Command {
@@ -22,13 +23,15 @@ func getStatus(ctx *cli.Context) error {
 	// Ask status for all processes
 	res, err := GorpcDispatcherClient.Call("status", req)
 
-	fmt.Printf("%+v\n", res)
+	resIpc := res.(map[ipc.ServiceName]*ipc.IpcLoadedService)
 
-	//resIpc := res.(map[ipc.IpcServiceType]*ipc.IpcProcess)
-
-	//for k, v := range resIpc {
-	//	fmt.Printf("%s / %s: %d", k, v.Name, v.RunState)
-	//}
+	for _, loadedService := range resIpc {
+		fmt.Printf("Service: %s\n", loadedService.Name)
+		fmt.Printf("Description: %s\n", loadedService.Description)
+		fmt.Printf("Status: %s\n", loadedService.State.String())
+		lastActionAt := time.Unix(loadedService.LastActionAt, 0).Format(time.RFC1123Z)
+		fmt.Printf("Last action: %s at %s\n\n", loadedService.LastAction.String(), lastActionAt)
+	}
 
 	return err
 }

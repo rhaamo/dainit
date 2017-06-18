@@ -31,9 +31,7 @@ func socketInitctl() {
 	})
 
 	// Returns processes statuses
-	d.AddFunc("status", func(status *ipc.IpcAskStatus) map[ipc.IpcServiceType]*ipc.IpcProcess {
-		println("wanting status")
-		println("Size of the QueueServices1:", len(QueueServices))
+	d.AddFunc("status", func(status *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
 		return returnStatus(status)
 	})
 
@@ -88,23 +86,11 @@ func returnStats() *ipc.IpcSysStatus {
 	}
 }
 
-func returnStatus(req *ipc.IpcAskStatus) map[ipc.IpcServiceType]*ipc.IpcProcess {
-	var statuses map[ipc.IpcServiceType]*ipc.IpcProcess
-
-	println("Size of the QueueServices:", len(QueueServices))
-
-	for k, v := range QueueServices {
-		println("k:", k)
-		println("v:", v)
-	}
-
+func returnStatus(req *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
 	if req.All {
-		//for k, v := range QueueServices {
-		//	statuses[ipc.IpcServiceType(k)] = &ipc.IpcProcess{Name: v.Name, RunState: v.RunState}
-		//}
+		return LoadedServices
 	} else {
 		// TODO FIXME not currently managed
+		return nil
 	}
-
-	return statuses
 }

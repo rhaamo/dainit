@@ -50,15 +50,78 @@ type IpcSysStatus struct {
 	NumGC        uint32
 }
 
-// IpcProcessesStat
-type IpcProcess struct {
-	Name		string
-	RunState	uint8
-}
-
-type IpcServiceType string
-
 type IpcAskStatus struct {
 	Name		string
 	All			bool
+}
+
+// Services types
+type ServiceName string
+type RunState uint8
+
+// A lightweight Service
+type IpcLoadedService struct {
+	Name			ServiceName
+	Description		string		// Currently not used
+	State			RunState
+
+	LastAction		LastAction
+	LastActionAt	int64		// Timestamp of the last action (UTC)
+}
+
+// Types of valid runState
+const (
+	NotStarted = RunState(iota)
+	Starting
+	Started
+	Stopped
+	Errored
+)
+
+func (rs RunState) String() string {
+	switch rs {
+	case NotStarted:
+		return "not started"
+	case Starting:
+		return "being started"
+	case Started:
+		return "already started"
+	case Stopped:
+		return "stopped"
+	case Errored:
+		return "errored"
+	default:
+		return "in an invalid state"
+	}
+}
+
+// Actions
+type LastAction uint8
+
+const (
+	Unknown = LastAction(iota)
+	Start
+	Stop
+	Reload
+	Restart
+	Forcekill
+)
+
+func (la LastAction) String() string {
+	switch la {
+	case Unknown:
+		return "unknown"
+	case Start:
+		return "start"
+	case Stop:
+		return "stop"
+	case Reload:
+		return "reload"
+	case Restart:
+		return "restart"
+	case Forcekill:
+		return "force kill"
+	default:
+		return "really unknown"
+	}
 }
