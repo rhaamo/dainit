@@ -38,6 +38,7 @@ func (rs runState) String() string {
 	}
 }
 
+// Service represents a struct with usefull infos used for management of services
 type Service struct {
 	Name     	ServiceName
 	Description	string
@@ -52,10 +53,11 @@ type Service struct {
 	state 		runState
 }
 
+// StartServices starts all declared services
 func StartServices() {
 	wg := sync.WaitGroup{}
 
-	var startedMu *sync.RWMutex = &sync.RWMutex{}
+	var startedMu = &sync.RWMutex{}
 	startedTypes := make(map[ServiceType]bool)
 	for _, services := range StartupServices {
 		wg.Add(len(services))
@@ -96,7 +98,7 @@ func StartServices() {
 	wg.Wait()
 }
 
-// Starts the Service s.
+// Start the Service s. if type is oneshot or forking
 func (s *Service) Start() error {
 	if s.state != notStarted {
 		return fmt.Errorf("Service %v is %v", s.Name, s.state.String())
@@ -124,6 +126,7 @@ func (s *Service) Start() error {
 	return nil
 }
 
+// StartSimple and track the PID and process state (for simple service without auto-fork function)
 func(s *Service) StartSimple() {
 	s.state = starting
 	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Starting
@@ -163,7 +166,7 @@ func(s *Service) StartSimple() {
 
 }
 
-// Checks if all of s's needs are satified by the passed list of provided types
+// NeedsSatisfied if all of s's needs are satified by the passed list of provided types
 func (s Service) NeedsSatisfied(started map[ServiceType]bool, mu *sync.RWMutex) bool {
 	mu.RLock()
 	defer mu.RUnlock()

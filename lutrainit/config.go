@@ -12,9 +12,13 @@ import (
 	"time"
 )
 
+// ServiceName defines the service name
 type ServiceName string
+
+// ServiceType defines the service type
 type ServiceType string
 
+// Command defines a command string used by Startup or Shutdown
 type Command string
 
 func (c Command) String() string {
@@ -82,7 +86,7 @@ func parseSetupLine(line string) (autologin string, persist bool) {
 	return "", false
 }
 
-// Parses a single config file into the services it provides
+// ParseConfig a single config file into the services it provides
 func ParseConfig(r io.Reader) (Service, error) {
 	s := Service{}
 	var line string
@@ -107,7 +111,7 @@ func ParseConfig(r io.Reader) (Service, error) {
 	}
 }
 
-// Parses all the config in directory dir return a map of
+// ParseServiceConfigs parse all the config in directory dir return a map of
 // providers of ServiceTypes from that directory.
 func ParseServiceConfigs(dir string, reloading bool) error {
 	files, err := ioutil.ReadDir(dir)
@@ -161,7 +165,7 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 	return nil
 }
 
-// Parses the file file for "Autologin:" or "Persist:" lines.
+// ParseSetupConfig parse the main configuration
 func ParseSetupConfig(r io.Reader) (autologins []string, persist bool, err error) {
 	scanner := bufio.NewReader(r)
 	for {

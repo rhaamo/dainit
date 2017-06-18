@@ -89,12 +89,12 @@ func returnStats() *ipc.IpcSysStatus {
 func returnStatus(req *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
 	if req.All {
 		return LoadedServices
-	} else {
-		if proc, exists := LoadedServices[ipc.ServiceName(req.Name)]; exists {
-			procList := make(map[ipc.ServiceName]*ipc.IpcLoadedService)
-			procList[ipc.ServiceName(req.Name)] = proc
-			return procList
-		}
-		return nil
 	}
+
+	if proc, exists := LoadedServices[ipc.ServiceName(req.Name)]; exists {
+		procList := make(map[ipc.ServiceName]*ipc.IpcLoadedService)
+		procList[ipc.ServiceName(req.Name)] = proc
+		return procList
+	}
+	return nil
 }

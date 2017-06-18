@@ -15,16 +15,22 @@ import (
 )
 
 var (
+	// LutraVersion should match the one in lutractl/main.go
 	LutraVersion = "0.1"
-	// Theses two last should only filled by LDFLAGS, see Makefile
-	LutraBuildTime string
-	LutraBuildGitHash string
 
 	// StartupServices is the in-memory map list of processes started on a full-start boot
 	StartupServices = make(map[ServiceType][]*Service)
 
 	// LoadedServices is the list of services loaded, with last known state
 	LoadedServices = make(map[ipc.ServiceName]*ipc.IpcLoadedService)
+
+	// Theses two last should only filled by LDFLAGS, see Makefile
+
+	// LutraBuildTime is the time of the build
+	LutraBuildTime string
+	// LutraBuildGitHash is the git sha1 of the commit based on
+	LutraBuildGitHash string
+
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -43,7 +49,7 @@ func runquiet(cmd string, args ...string) error {
 	return c.Run()
 }
 
-// Set's the hostname for the kernel.
+// SetHostname set the hostname
 func SetHostname(hostname []byte) {
 	proc, err := os.Create("/proc/sys/kernel/hostname")
 	if err != nil {

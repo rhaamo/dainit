@@ -24,10 +24,10 @@ func waitForDeath() error {
 		fmt.Fprintf(os.Stderr, "Waiting for processes to die (%d processes left)..\n", len(pids))
 		time.Sleep(2 * time.Second)
 	}
-	return fmt.Errorf("Processes did not die after a minute.")
+	return fmt.Errorf("processes did not die after a minute")
 }
 
-// Kills all processes on the system.
+// KillAll processes on the system.
 func KillAll() {
 	fmt.Fprintf(os.Stderr, "Killing system processes..\n")
 	// Try to send a sigterm

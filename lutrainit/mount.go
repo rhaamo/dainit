@@ -14,7 +14,7 @@ func Remount(dir string) {
 	}
 }
 
-// Mounts a filesystem, creating the mount point if it doesn't exist.
+// Mount a filesystem, creating the mount point if it doesn't exist.
 func Mount(typ, device, dir, opts string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0775); err != nil {
@@ -27,8 +27,7 @@ func Mount(typ, device, dir, opts string) {
 	}
 }
 
-// Mounts all filesystems from /etc/fstab, except for ones of the type passed in the
-// except parameter
+// MountAllExcept for ones of the type passed in the except parameter
 func MountAllExcept(except []string) {
 	noexcept := make([]string, len(except))
 	for i, val := range except {
@@ -39,7 +38,7 @@ func MountAllExcept(except []string) {
 	}
 }
 
-// Unmounts all filesystems, except for netdev filesystems and those passed in the except
+// UnmountAllExcept for netdev filesystems and those passed in the except
 // parameter
 func UnmountAllExcept(except []string) {
 	noexcept := make([]string, len(except))
