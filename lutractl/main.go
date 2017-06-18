@@ -8,15 +8,22 @@ import (
 )
 
 var (
+	// LutraVersion should match the one in lutrainit/main.go
 	LutraVersion = "0.1"
-	// Theses two last should only filled by LDFLAGS, see Makefile
-	LutraBuildTime string
-	LutraBuildGitHash string
 
-	// Dispatcher to dispatch things
-	GorpcDispatcher *gorpc.Dispatcher
+	// GorpcDispatcher is the main dispatcher object
+	GorpcDispatcher			*gorpc.Dispatcher
+	// GorpcDispatcherClient is the client dispatcher object
 	GorpcDispatcherClient	*gorpc.DispatcherClient
-	GorpcClient		*gorpc.Client
+	// GorpcClient is the main client object
+	GorpcClient				*gorpc.Client
+
+	// Theses two last should only filled by LDFLAGS, see Makefile
+
+	// LutraBuildTime is the time of the build
+	LutraBuildTime string
+	// LutraBuildGitHash is the git sha1 of the commit based on
+	LutraBuildGitHash string
 )
 
 

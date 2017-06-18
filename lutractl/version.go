@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// CmdVersion CLI object
 var CmdVersion = cli.Command {
 	Name: "version",
 	Usage: "Shows init version",

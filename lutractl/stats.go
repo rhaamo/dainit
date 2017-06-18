@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+
+// CmdStats CLI object
 var CmdStats = cli.Command {
 	Name: "stats",
 	Usage: "Shows init stats",

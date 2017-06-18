@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// CmdStatus CLI object
 var CmdStatus = cli.Command {
 	Name: "status",
 	Usage: "Shows init processes status",
