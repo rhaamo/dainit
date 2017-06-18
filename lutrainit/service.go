@@ -46,6 +46,9 @@ type Service struct {
 	Provides 	[]ServiceType
 	Needs    	[]ServiceType
 
+	Type		string	// forking or simple
+	PIDFile		string
+
 	state 		runState
 }
 

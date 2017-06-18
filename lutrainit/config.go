@@ -50,6 +50,23 @@ func parseLine(line string, s *Service) error {
 		if s.Description == "" {
 			s.Description = strings.TrimSpace(strings.TrimPrefix(line, "Description:"))
 		}
+	} else if strings.HasPrefix(line, "PIDFile:") {
+		if s.PIDFile == "" {
+			s.PIDFile = strings.TrimSpace(strings.TrimPrefix(line, "PIDFile:"))
+		}
+	} else if strings.HasPrefix(line, "Type:") {
+		if s.Type == "" {
+			serviceType := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
+			switch serviceType {
+			case "simple":
+				s.Type = "simple"
+			case "forking":
+				s.Type = "forking"
+			default:
+				fmt.Printf("Invalid service type: %s, forcing Type=simple\n", serviceType)
+				s.Type = "simple"
+			}
+		}
 	}
 	return nil
 }

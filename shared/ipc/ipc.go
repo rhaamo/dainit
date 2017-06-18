@@ -67,6 +67,9 @@ type IpcLoadedService struct {
 
 	LastAction		LastAction
 	LastActionAt	int64		// Timestamp of the last action (UTC)
+
+	Type			string // forking or simple
+	PIDFile			string
 }
 
 // Types of valid runState

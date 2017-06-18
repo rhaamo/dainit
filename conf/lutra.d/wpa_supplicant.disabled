@@ -1,5 +1,6 @@
 Name: wpa_supplicant
 Description: This is a sample config file to start wpa_supplicant after udevd is started (which is needed to find the device wlan0.)
+Type: unknown
 
 Provides: network
 Needs: devfs
