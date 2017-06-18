@@ -15,11 +15,16 @@ check: test
 govet:
 	$(GOVET) main.go
 
-build:
+init:
 	@echo "Building init"
-	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -v -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+
+ctl:
 	@echo "Building client"
-	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -v -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+
+
+build: init ctl
 
 build-dev: govet
 	go build -o lutrainit -v -tags '$(TAGS)'
