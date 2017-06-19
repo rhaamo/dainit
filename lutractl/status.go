@@ -18,7 +18,7 @@ var CmdStatus = cli.Command {
 
 func getStatus(ctx *cli.Context) error {
 
-	req := &ipc.IpcAskStatus{}
+	req := &ipc.AskStatus{}
 
 	if ctx.Args().Present() {
 		req.Name = ctx.Args().First()
@@ -29,7 +29,7 @@ func getStatus(ctx *cli.Context) error {
 
 	res, err := GorpcDispatcherClient.Call("status", req)
 
-	resIpc := res.(map[ipc.ServiceName]*ipc.IpcLoadedService)
+	resIpc := res.(map[ipc.ServiceName]*ipc.LoadedService)
 
 	if len(resIpc) == 0 && !req.All {
 		fmt.Printf("No service matching '%s'\n", req.Name)

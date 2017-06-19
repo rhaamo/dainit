@@ -152,7 +152,7 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		}
 
 		// Populate the Loaded Services thingy
-		ipcLoadedService :=  &ipc.IpcLoadedService{
+		ipcLoadedService :=  &ipc.LoadedService{
 			Name: ipc.ServiceName(s.Name),
 			Description: s.Description,
 			PIDFile: s.PIDFile,
@@ -174,18 +174,18 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 
 func checkSanity(service *Service, filename string) error {
 
-	if !ipc.IsCustAscii(string(service.Name)) {
+	if !ipc.IsCustASCII(string(service.Name)) {
 		return fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", filename, service.Name)
 	}
 
 	for _, provide := range service.Provides {
-		if !ipc.IsCustAscii(string(provide)) {
+		if !ipc.IsCustASCII(string(provide)) {
 			return fmt.Errorf("%s has invalid provides '%s', only a-Z0-9_-. allowed", filename, provide)
 		}
 	}
 
 	for _, need := range service.Needs {
-		if !ipc.IsCustAscii(string(need)) {
+		if !ipc.IsCustASCII(string(need)) {
 			return fmt.Errorf("%s has invalid needs '%s', only a-Z0-9_-. allowed", filename, need)
 		}
 	}

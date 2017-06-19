@@ -9,6 +9,7 @@ import (
 	"math"
 )
 
+// Define xBytes constants
 const (
 	Byte  = 1
 	KByte = Byte * 1024

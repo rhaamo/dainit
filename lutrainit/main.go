@@ -22,7 +22,7 @@ var (
 	StartupServices = make(map[ServiceType][]*Service)
 
 	// LoadedServices is the list of services loaded, with last known state
-	LoadedServices = make(map[ipc.ServiceName]*ipc.IpcLoadedService)
+	LoadedServices = make(map[ipc.ServiceName]*ipc.LoadedService)
 
 	// Theses two last should only filled by LDFLAGS, see Makefile
 

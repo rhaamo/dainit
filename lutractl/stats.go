@@ -19,7 +19,7 @@ var CmdStats = cli.Command {
 func getStats(ctx *cli.Context) error {
 	res, err := GorpcDispatcherClient.Call("stats", nil)
 
-	resIpc := res.(*ipc.IpcSysStatus)
+	resIpc := res.(*ipc.SysStatus)
 
 	fmt.Printf("lutrainit running statistics\n")
 	fmt.Printf("Init Uptime: %s\n", resIpc.Uptime)

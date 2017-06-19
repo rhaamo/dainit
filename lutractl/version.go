@@ -18,7 +18,7 @@ var CmdVersion = cli.Command {
 func getVersion(ctx *cli.Context) error {
 	res, err := GorpcDispatcherClient.Call("version", nil)
 
-	resIpc := res.(*ipc.IpcVersion)
+	resIpc := res.(*ipc.Version)
 
 	fmt.Printf("Client version: %s\nRunning init: %s\nBuilt on: %s\nCommit sha: %s\n",
 		LutraVersion, resIpc.ServerVersion, resIpc.ServerBuildTime, resIpc.ServerBuildHash)

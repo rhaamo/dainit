@@ -17,8 +17,8 @@ func socketInitctl() {
 	d := gorpc.NewDispatcher()
 
 	// Returns the init daemon version
-	d.AddFunc("version", func() *ipc.IpcVersion {
-		return &ipc.IpcVersion{
+	d.AddFunc("version", func() *ipc.Version {
+		return &ipc.Version{
 			ServerVersion: LutraVersion,
 			ServerBuildHash: LutraBuildGitHash,
 			ServerBuildTime: LutraBuildTime,
@@ -26,12 +26,12 @@ func socketInitctl() {
 	})
 
 	// Returns the daemon system stats
-	d.AddFunc("stats", func() *ipc.IpcSysStatus {
+	d.AddFunc("stats", func() *ipc.SysStatus {
 		return returnStats()
 	})
 
 	// Returns processes statuses
-	d.AddFunc("status", func(status *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
+	d.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
 		return returnStatus(status)
 	})
 
@@ -44,11 +44,11 @@ func socketInitctl() {
 	defer s.Stop()
 }
 
-func returnStats() *ipc.IpcSysStatus {
+func returnStats() *ipc.SysStatus {
 	m := new(runtime.MemStats)
 	runtime.ReadMemStats(m)
 
-	return &ipc.IpcSysStatus{
+	return &ipc.SysStatus{
 		Uptime: tools.TimeSincePro(startTime),
 
 		NumGoroutine: runtime.NumGoroutine(),
@@ -86,13 +86,13 @@ func returnStats() *ipc.IpcSysStatus {
 	}
 }
 
-func returnStatus(req *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
+func returnStatus(req *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
 	if req.All {
 		return LoadedServices
 	}
 
 	if proc, exists := LoadedServices[ipc.ServiceName(req.Name)]; exists {
-		procList := make(map[ipc.ServiceName]*ipc.IpcLoadedService)
+		procList := make(map[ipc.ServiceName]*ipc.LoadedService)
 		procList[ipc.ServiceName(req.Name)] = proc
 		return procList
 	}

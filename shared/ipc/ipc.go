@@ -2,16 +2,16 @@ package ipc
 
 import "regexp"
 
-// IpcVersion used with Version command of lutractl
+// Version used with Version command of lutractl
 // Returns server version to the client
-type IpcVersion struct {
+type Version struct {
 	ServerVersion string
 	ServerBuildTime string
 	ServerBuildHash string
 }
 
-// IpcSysStatus used with Stats command of lutractl
-type IpcSysStatus struct {
+// SysStatus used with Stats command of lutractl
+type SysStatus struct {
 	Uptime       string
 	NumGoroutine int
 
@@ -52,17 +52,19 @@ type IpcSysStatus struct {
 	NumGC        uint32
 }
 
-type IpcAskStatus struct {
+// AskStatus struct with limited service name or asking for all
+type AskStatus struct {
 	Name		string
 	All			bool
 }
 
-// Services types
+// ServiceName specify service name
 type ServiceName string
+// RunState represents one of the states the service can be
 type RunState uint8
 
-// A lightweight Service
-type IpcLoadedService struct {
+// LoadedService is a lightweight Service
+type LoadedService struct {
 	Name			ServiceName
 	Description		string		// Currently not used
 	State			RunState
@@ -102,9 +104,10 @@ func (rs RunState) String() string {
 	}
 }
 
-// Actions
+// LastAction represent the latest action done to the service
 type LastAction uint8
 
+// Last actions constants
 const (
 	Unknown = LastAction(iota)
 	Start
@@ -133,5 +136,5 @@ func (la LastAction) String() string {
 	}
 }
 
-// IsCustAscii is a custom regexp checker for sanity
-var IsCustAscii = regexp.MustCompile(`[a-zA-Z0-9_\-.]+$`).MatchString
+// IsCustASCII is a custom regexp checker for sanity
+var IsCustASCII = regexp.MustCompile(`[a-zA-Z0-9_\-.]+$`).MatchString

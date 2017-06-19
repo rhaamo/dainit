@@ -41,13 +41,13 @@ func main() {
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 
 	// Main RPC initialization
-	gorpc.RegisterType(&ipc.IpcSysStatus{})
-	gorpc.RegisterType(&ipc.IpcVersion{})
-	gorpc.RegisterType(&ipc.IpcAskStatus{})
+	gorpc.RegisterType(&ipc.SysStatus{})
+	gorpc.RegisterType(&ipc.Version{})
+	gorpc.RegisterType(&ipc.AskStatus{})
 
 	GorpcDispatcher = gorpc.NewDispatcher()
 
-	GorpcDispatcher.AddFunc("status", func(status *ipc.IpcAskStatus) map[ipc.ServiceName]*ipc.IpcLoadedService {
+	GorpcDispatcher.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
 		println("wanting client status")
 		return nil
 	})
