@@ -5,3 +5,4 @@ import:
 - package: github.com/valyala/gorpc
 - package: github.com/smartystreets/goconvey
   version: ^1.6.2
+- package: github.com/mitchellh/go-ps
