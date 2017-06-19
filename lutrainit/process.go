@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"syscall"
 	"time"
 	"github.com/mitchellh/go-ps"
+	"github.com/go-clog/clog"
 )
 
 // Waits up to a minute for all processes to die.
@@ -22,14 +22,16 @@ func waitForDeath() error {
 			return nil
 		}
 
-		fmt.Fprintf(os.Stderr, "Waiting for processes to die (%d processes left)..\n", len(pids))
+		//fmt.Fprintf(os.Stderr, "[lutra] Waiting for processes to die (%d processes left)..\n", len(pids))
+		clog.Info("[lutra] Waiting for processes to die (%d processes left)..\n", len(pids))
 
 		for _, pid := range pids {
 			p, err := ps.FindProcess(pid.Pid)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "PID %d with name %s is still alive.\n", p.Pid(), p.Executable())
+			//fmt.Fprintf(os.Stderr, "[lutra] PID %d with name %s is still alive.\n", p.Pid(), p.Executable())
+			clog.Info("[lutra] PID %d with name %s is still alive.\n", p.Pid(), p.Executable())
 		}
 
 		time.Sleep(2 * time.Second)
@@ -39,12 +41,14 @@ func waitForDeath() error {
 
 // KillAll processes on the system.
 func KillAll() {
-	println("[lutra] Killing everything I can find...")
-	fmt.Fprintf(os.Stderr, "Killing system processes..\n")
+	clog.Info("[lutra] Killing everything I can find...")
+	//fmt.Fprintf(os.Stderr, "[lutra] Killing system processes..\n")
+	clog.Info("[lutra] Killing system processes..")
+
 	// Try to send a sigterm
 	pids, err := getAllProcesses()
 	if err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 		return
 	}
 	for _, proc := range pids {
@@ -52,7 +56,7 @@ func KillAll() {
 	}
 
 	if err := waitForDeath(); err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 	}
 	// They didn't respond to sigterm after a minute, so be mean and send a SIGKILL
 	pids, _ = getAllProcesses()
@@ -60,12 +64,14 @@ func KillAll() {
 		proc.Signal(syscall.SIGKILL)
 	}
 	if len(pids) > 0 {
-		fmt.Fprintf(os.Stderr, "Sent kill signal to %d processes that didn't respond to term..\n", len(pids))
+		//fmt.Fprintf(os.Stderr, "Sent kill signal to %d processes that didn't respond to term..\n", len(pids))
+		clog.Info("Sent kill signal to %d processes that didn't respond to term..\n", len(pids))
+
 		time.Sleep(2 * time.Second)
 	}
 
 	if err := waitForDeath(); err != nil {
-		log.Println(err, " :(")
+		clog.Error(2, "%s :(", err.Error())
 	}
 }
 
@@ -101,7 +107,7 @@ func getAllProcesses() ([]*os.Process, error) {
 		}
 		proc, err := os.FindProcess(pid)
 		if err != nil {
-			log.Println(err)
+			clog.Error(2, err.Error())
 			continue
 		}
 		rprocs = append(rprocs, proc)
@@ -111,13 +117,17 @@ func getAllProcesses() ([]*os.Process, error) {
 
 
 func doShutdown(reboot bool) {
+	clog.Info("Shutdown or reboot initiated, please wait...")
 	// TODO: Run shutdown scripts for services that are started instead
 	// of just sending them a SIGTERM right off the bat..
 	KillAll()
 
+	// At this point we need to remove the file logger
+	clog.Delete(clog.FILE)
+
 	// This needs to be done after all the processes are dead, otherwise
 	// it will fail due to being in use.
-	println("[lutra] Unmounting filesystems...")
+	clog.Info("[lutra] Unmounting filesystems...")
 	UnmountAllExcept(append(NetFs, VirtFs...))
 
 	// Halt the system explicitly to prevent a kernel panic.

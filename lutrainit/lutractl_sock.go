@@ -7,6 +7,7 @@ import (
 	"github.com/valyala/gorpc"
 	"time"
 	"runtime"
+	"github.com/go-clog/clog"
 )
 
 var (
@@ -31,11 +32,13 @@ func socketInitctl() {
 	})
 
 	d.AddFunc("shutdown", func() {
+		clog.Info("[lutra] I was asked to shutdown, goodbye!")
 		doShutdown(false)
 		// will never return, sorry
 	})
 
 	d.AddFunc("reboot", func() {
+		clog.Info("[lutra] I was asked to reboot, seeya!")
 		doShutdown(true)
 		// will never return, sorry
 	})
@@ -46,11 +49,12 @@ func socketInitctl() {
 	})
 
 	s := gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
+	clog.Info("[lutra] RPC starting on socket: %s", s.Addr)
+
 	if err := s.Serve(); err != nil {
-		println("[lutra][socket] Starting GoRPC error", err)
+		clog.Error(2, "[lutra][socket] Starting GoRPC error", err.Error())
 		return
 	}
-	println("[lutra][socket] GoRPC started", s.Addr)
 	defer s.Stop()
 }
 

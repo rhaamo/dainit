@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	"github.com/go-clog/clog"
 	"os"
 	"strings"
 	"github.com/rhaamo/lutrainit/shared/ipc"
 	"time"
+	"github.com/go-ini/ini"
 )
 
 // ServiceName defines the service name
@@ -24,6 +25,24 @@ type Command string
 func (c Command) String() string {
 	return string(c)
 }
+
+var (
+	// MainConfig of the daemon
+	MainConfig struct {
+		Persist		bool
+		Autologins	[]string
+
+		Log struct {
+			Filename 	string
+			Rotate   	bool
+			Daily   	bool
+			MaxSize	 	int
+			MaxLines 	int64
+			MaxDays  	int64
+			BufferLen	int64
+		}
+	}
+)
 
 func parseLine(line string, s *Service) error {
 	if strings.HasPrefix(line, "Needs:") {
@@ -69,21 +88,12 @@ func parseLine(line string, s *Service) error {
 			case "oneshot":
 				s.Type = "oneshot"
 			default:
-				fmt.Printf("Invalid service type: %s, forcing Type=simple\n", serviceType)
+				clog.Warn("[lutra] Invalid service type: %s, forcing Type=simple", serviceType)
 				s.Type = "simple"
 			}
 		}
 	}
 	return nil
-}
-
-func parseSetupLine(line string) (autologin string, persist bool) {
-	if strings.HasPrefix(line, "Autologin:") {
-		return strings.TrimSpace(strings.TrimPrefix(line, "Autologin:")), false
-	} else if strings.HasPrefix(line, "Persist:") {
-		return "", strings.TrimSpace(strings.TrimPrefix(line, "Persist:")) == "true"
-	}
-	return "", false
 }
 
 // ParseConfig a single config file into the services it provides
@@ -98,7 +108,7 @@ func ParseConfig(r io.Reader, filename string) (Service, error) {
 		switch err {
 		case io.EOF:
 			if err := parseLine(line, &s); err != nil {
-				log.Println(err)
+				clog.Error(2, err.Error())
 			}
 
 			// Check for configuration sanity before returning
@@ -109,7 +119,7 @@ func ParseConfig(r io.Reader, filename string) (Service, error) {
 			return s, nil
 		case nil:
 			if err := parseLine(line, &s); err != nil {
-				log.Println(err)
+				clog.Error(2, err.Error())
 			}
 		default:
 			return Service{}, err
@@ -137,13 +147,13 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 
 		f, err := os.Open(dir + "/" + fstat.Name())
 		if err != nil {
-			log.Println(err)
+			clog.Error(2, err.Error())
 			continue
 		}
 		s, err := ParseConfig(f, fstat.Name())
 		f.Close()
 		if err != nil {
-			log.Println(err)
+			clog.Error(2, err.Error())
 			continue
 		}
 
@@ -194,31 +204,26 @@ func checkSanity(service *Service, filename string) error {
 }
 
 // ParseSetupConfig parse the main configuration
-func ParseSetupConfig(r io.Reader) (autologins []string, persist bool, err error) {
-	scanner := bufio.NewReader(r)
-	for {
-		line, err2 := scanner.ReadString('\n')
-		switch err2 {
-		case io.EOF:
-			autologin, persist2 := parseSetupLine(line)
-			if autologin != "" {
-				autologins = append(autologins, autologin)
-			}
-			if persist2 {
-				persist = persist2
-			}
-			return
-		case nil:
-			autologin, persist2 := parseSetupLine(line)
-			if autologin != "" {
-				autologins = append(autologins, autologin)
-			}
-			if persist2 {
-				persist = persist2
-			}
-		default:
-			err = err2
-			return
-		}
+func ParseSetupConfig(fname string) (err error) {
+	Cfg, err := ini.InsensitiveLoad(fname)
+	if err != nil {
+		clog.Error(2, "Failed to parse '%s': %v", fname, err)
+		return err
 	}
+	Cfg.NameMapper = ini.TitleUnderscore
+
+	sec := Cfg.Section("global")
+	MainConfig.Persist = sec.Key("Persist").MustBool(false)
+	MainConfig.Autologins = sec.Key("Autologin").Strings(",")
+
+	sec = Cfg.Section("logging")
+	MainConfig.Log.Filename = sec.Key("filename").MustString("/var/log/lutrainit.log")
+	MainConfig.Log.Daily = sec.Key("rotate_daily").MustBool(true)
+	MainConfig.Log.MaxDays = sec.Key("max_days").MustInt64(7)
+	MainConfig.Log.Rotate = sec.Key("rotate").MustBool(true)
+	MainConfig.Log.MaxSize = sec.Key("max_size_shift").MustInt(28)
+	MainConfig.Log.MaxLines = sec.Key("max_lines").MustInt64(1000000)
+	MainConfig.Log.BufferLen = sec.Key("buffer_len").MustInt64(100)
+
+	return err
 }

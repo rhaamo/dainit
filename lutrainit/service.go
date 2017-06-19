@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"sync"
 	"time"
 	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/go-clog/clog"
 )
 
 type runState uint8
@@ -75,13 +75,13 @@ func StartServices() {
 					// Start the service
 					if s.Type == "oneshot" || s.Type == "forking" {
 						if err := s.Start(); err != nil {
-							log.Println(err)
+							clog.Error(2, err.Error())
 						}
 					} else if s.Type == "simple" {
 						go s.StartSimple()
 					} else {
 						// What are you doing here ?
-						fmt.Printf("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
+						clog.Warn("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
 					}
 
 				}
@@ -116,12 +116,16 @@ func (s *Service) Start() error {
 		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
 
+		clog.Error(2,"[lutra] Error starting service %s: %s", s.Name, err.Error())
+
 		return err
 	}
 	s.state = started
 	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
 	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+
+	clog.Info("[lutra] Started service %s", s.Name)
 
 	return nil
 }
@@ -137,7 +141,7 @@ func(s *Service) StartSimple() {
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
-		log.Printf("Service %s exited with error: %s", s.Name, err)
+		clog.Error(2,"[lutra] Service %s exited with error: %s", s.Name, err.Error())
 		s.state = errored
 		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Errored
 		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
@@ -148,16 +152,18 @@ func(s *Service) StartSimple() {
 	s.state = started
 	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
 	LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = cmd.Process.Pid
+	clog.Info("[lutra] Started service %s", s.Name)
 
 	err := cmd.Wait()
 	if err != nil {
-		log.Printf("Service %s finished with error: %s", s.Name, err)
+		clog.Error(2, "[lutra] Service %s finished with error: %s", s.Name, err.Error())
 		s.state = stopped
 		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
 		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
 		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
 	} else {
 		s.state = stopped
+		clog.Info("[lutra] Service stopped: %s", s.Name)
 		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
 		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
 		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()

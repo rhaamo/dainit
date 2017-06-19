@@ -1,12 +1,12 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"sync"
 	"syscall"
+	"github.com/go-clog/clog"
 )
 
 // Gettys spawn the number of ttys required for len(autologins) to login.
@@ -24,7 +24,7 @@ func Gettys(autologins []string, persist bool) {
 
 		for {
 			if err := getty(user, tty); err != nil {
-				log.Println(err)
+				clog.Error(2, err.Error())
 			}
 			if !persist {
 				return
@@ -42,7 +42,7 @@ func Gettys(autologins []string, persist bool) {
 				defer wg.Done()
 				for {
 					if err := getty(user, tty); err != nil {
-						log.Println(err)
+						clog.Error(2, err.Error())
 					}
 					if !persist {
 						return

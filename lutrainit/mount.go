@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
 	"os"
 	"strings"
+	"github.com/go-clog/clog"
 )
 
 // Remount a filesystem. Grub mounts / as ro during the boot process, and this will get it to
 // be readwrite (assuming it's rw in /etc/fstab)
 func Remount(dir string) {
 	if err := run("mount", "-o", "remount", dir); err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 	}
 }
 
@@ -18,12 +18,12 @@ func Remount(dir string) {
 func Mount(typ, device, dir, opts string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0775); err != nil {
-			log.Printf("Could not create mount point %v: %v\n", dir, err)
+			clog.Error(2, "Could not create mount point %v: %v\n", dir, err.Error())
 			return
 		}
 	}
 	if err := run("mount", "-t", typ, device, dir, "-o", opts); err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 	}
 }
 
@@ -34,7 +34,7 @@ func MountAllExcept(except []string) {
 		noexcept[i] = "no" + val
 	}
 	if err := run("mount", "-a", "-t", strings.Join(noexcept, ","), "-O", "no_netdev"); err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 	}
 }
 
@@ -46,6 +46,6 @@ func UnmountAllExcept(except []string) {
 		noexcept[i] = "no" + val
 	}
 	if err := run("umount", "-a", "-t", strings.Join(noexcept, ","), "-O", "no_netdev"); err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 	}
 }

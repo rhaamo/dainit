@@ -6,11 +6,11 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/go-clog/clog"
 )
 
 var (
@@ -57,26 +57,33 @@ func runquiet(cmd string, args ...string) error {
 func SetHostname(hostname []byte) {
 	proc, err := os.Create("/proc/sys/kernel/hostname")
 	if err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 		return
 	}
 	defer proc.Close()
 
 	_, err = proc.Write(hostname)
 	if err != nil {
-		log.Println(err)
+		clog.Error(2, err.Error())
 		return
 	}
 }
 
 func main() {
+	err := setupLogging(false); if err != nil {
+		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
+		// we have no choice
+		// PANIC PANIC PANIC
+		os.Exit(-1)
+	}
+
 	// First of first, who are we ?
-	println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	println("~~ LutraInit version", LutraVersion, "-", LutraBuildGitHash, "~~")
-	println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	clog.Info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	clog.Info("~~ LutraInit version %s - %s ~~",LutraVersion, LutraBuildGitHash)
+	clog.Info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 	if !thePidOne() {
-		println("I'm sorry but I'm supposed to be run as an init.")
+		clog.Warn("[lutra] I'm sorry but I'm supposed to be run as an init.")
 		os.Exit(-1)
 	}
 
@@ -84,26 +91,26 @@ func main() {
 	// This is usefull if we use lutrainit in an initramfs since PATH would be unset
 	curEnvPath := os.Getenv("PATH")
 	if len(strings.TrimSpace(curEnvPath)) == 0 {
-		println("[lutra] Empty $PATH, fixed.")
 		os.Setenv("PATH", "/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin")
+		clog.Info("[lutra] Empty $PATH, fixed.")
 	}
-	println("[lutra] Current $PATH is:", os.Getenv("PATH"))
+	clog.Info("[lutra] Current $PATH is: %s", os.Getenv("PATH"))
 
 	// Remount root as rw.
 	//
 	// This should be handled by mount -a according to mount(8), since the flags that
 	// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
 	// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
-	println("[lutra] Remounting root filesystem")
+	clog.Info("[lutra] Remounting root filesystem")
 	Remount("/")
 
 	// Start socket in background
 	go socketInitctl()
 
 	// Mount local filesytems
-	println("[lutra] Mounting local file systems")
-
+	clog.Info("[lutra] Mounting local file systems")
 	MountAllExcept(NetFs)
+
 	// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
 	run("swapon", "-a")
 
@@ -111,7 +118,7 @@ func main() {
 	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
 		SetHostname(hostname)
 	} else {
-		println("[lutra] Error setting hostname", err)
+		clog.Error(2, "[lutra] Error setting hostname: %s", err.Error())
 	}
 
 	// There's a little (dare I say, a lot?) of black magic that seems to
@@ -134,36 +141,28 @@ func main() {
 	// that I'd need to manually add it every time I install a new system..)
 	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
-	// Parse all the configs in /etc/dainit. Finally!
-	err := ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
-	if err != nil {
-		log.Println(err)
+	// Parse Main configuration
+	if err = ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
+		clog.Warn("[lutra] Cannot parse configuration file: %s", err.Error())
 	}
 
+	// Parse all the configs in /etc/dainit. Finally!
+	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
+	if err != nil {
+		clog.Error(2, "[lutra] Cannot parse service configs: %s", err.Error())
+	}
+
+	// We finally have a filesystem mounted and the configuration is parsed
+	if err := setupLogging(true); err != nil {
+		clog.Error(2, "Failed to add file logging to logger: %s", err.Error())
+	}
 	// Start all services from StartupServices in the right Needs/Provide order
 	StartServices()
 
 	// Kick Zombies out in the background
 	go reapChildren()
 
-	// Launch an appropriate number of getty processes on ttys.
-	if conf, err := os.Open("/etc/lutrainit/lutra.conf"); err != nil {
-		// If the config doesn't exist or can't be opened, use the defaults.
-		Gettys(nil, false)
-	} else {
-		if autologins, persist, err := ParseSetupConfig(conf); err != nil {
-			// We don't want to defer this because otherwise it won't
-			// get executed until the system is shutting down..
-			conf.Close()
-
-			// If the config couldn't be parsed, used the defaults
-			log.Println(err)
-			Gettys(nil, false)
-		} else {
-			conf.Close()
-			Gettys(autologins, persist)
-		}
-	}
+	Gettys(MainConfig.Autologins, MainConfig.Persist)
 
 	// The tty exited. Kill processes, unmount filesystems and halt the system.
 	doShutdown(false)
@@ -175,4 +174,34 @@ func thePidOne() bool {
 	} else {
 		return false
 	}
+}
+
+func setupLogging(withFile bool) (err error) {
+	err = clog.New(clog.CONSOLE, clog.ConsoleConfig{
+		Level: clog.TRACE, // record all logs
+		BufferSize: 100,     // log async, 0 is sync
+	})
+	if err != nil {
+		println("Whoops, cannot initialize logging to console:", err.Error())
+		return err
+	}
+
+	if withFile {
+		err = clog.New(clog.FILE, clog.FileConfig{
+			Level:      clog.TRACE,
+			BufferSize: MainConfig.Log.BufferLen,
+			Filename:   MainConfig.Log.Filename,
+			FileRotationConfig: clog.FileRotationConfig{
+				Rotate:   MainConfig.Log.Rotate,
+				Daily:    MainConfig.Log.Daily,
+				MaxSize:  1 << uint(MainConfig.Log.MaxSize),
+				MaxLines: MainConfig.Log.MaxLines,
+				MaxDays:  MainConfig.Log.MaxDays,
+			},
+		})
+		if err != nil {
+			clog.Error(2, "Cannot initialize log to file: %s", err.Error())
+		}
+	}
+	return err
 }
