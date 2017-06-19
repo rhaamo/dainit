@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+	"github.com/mitchellh/go-ps"
 )
 
 // Waits up to a minute for all processes to die.
@@ -22,6 +23,15 @@ func waitForDeath() error {
 		}
 
 		fmt.Fprintf(os.Stderr, "Waiting for processes to die (%d processes left)..\n", len(pids))
+
+		for _, pid := range pids {
+			p, err := ps.FindProcess(pid.Pid)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "PID %d with name %s is still alive.\n", p.Pid(), p.Executable())
+		}
+
 		time.Sleep(2 * time.Second)
 	}
 	return fmt.Errorf("processes did not die after a minute")
