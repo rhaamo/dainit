@@ -174,18 +174,18 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 
 func checkSanity(service *Service, filename string) error {
 
-	if !ipc.IsCustASCII(string(service.Name)) {
+	if ! ipc.IsCustASCII(string(service.Name)) {
 		return fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", filename, service.Name)
 	}
 
 	for _, provide := range service.Provides {
-		if !ipc.IsCustASCII(string(provide)) {
+		if !ipc.IsCustASCIISpace(string(provide)) {
 			return fmt.Errorf("%s has invalid provides '%s', only a-Z0-9_-. allowed", filename, provide)
 		}
 	}
 
 	for _, need := range service.Needs {
-		if !ipc.IsCustASCII(string(need)) {
+		if !ipc.IsCustASCIISpace(string(need)) {
 			return fmt.Errorf("%s has invalid needs '%s', only a-Z0-9_-. allowed", filename, need)
 		}
 	}

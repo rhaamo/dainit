@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"syscall"
+//	"syscall"
 	"strings"
 	"github.com/rhaamo/lutrainit/shared/ipc"
 )
@@ -170,5 +170,5 @@ func main() {
 	UnmountAllExcept(append(netfs, virtfs...))
 
 	// Halt the system explicitly to prevent a kernel panic.
-	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
+	//syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
 }

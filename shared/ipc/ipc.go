@@ -137,4 +137,7 @@ func (la LastAction) String() string {
 }
 
 // IsCustASCII is a custom regexp checker for sanity
-var IsCustASCII = regexp.MustCompile(`[a-zA-Z0-9_\-.]+$`).MatchString
+var IsCustASCII = regexp.MustCompile(`^[a-zA-Z0-9_\-.]+$`).MatchString
+
+// IsCustASCIISpace is a custom regexp checker for sanity with a space !!!
+var IsCustASCIISpace = regexp.MustCompile(`^[a-zA-Z0-9_\-. ]+$`).MatchString

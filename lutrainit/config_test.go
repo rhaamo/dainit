@@ -1,8 +1,11 @@
-package main
+package main_test
 
 import (
+	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/rhaamo/lutrainit/lutrainit"
 	"strings"
 	"testing"
+	//"github.com/davecgh/go-spew/spew"
 )
 
 func compareService(s1, s2 Service) bool {
@@ -25,31 +28,80 @@ func compareService(s1, s2 Service) bool {
 	return s1.Name == s2.Name && s1.Startup == s2.Startup && s1.Shutdown == s2.Shutdown
 }
 
-func TestServiceConfigParsing(t *testing.T) {
-	tcs := []struct {
-		Content string
-		Service Service
-	}{
-		{
-			// Test the basic parser (with no trailing newline)
-			`Name: TestService
+
+func Test_ParseConfig(t *testing.T) {
+	Convey("Basic parser without trailing newline", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService
 Needs: stuff
 Provides: otherstuff
 Startup: foo
 Shutdown: bar
 Type: forking`,
-			Service{
-				Name:     "TestService",
-				Startup:  "foo",
-				Shutdown: "bar",
-				Needs:    []ServiceType{"stuff"},
-				Provides: []ServiceType{"otherstuff"},
-				Type: 	  "forking",
+				Service{
+					Name:     "TestService",
+					Startup:  "foo",
+					Shutdown: "bar",
+					Needs:    []ServiceType{"stuff"},
+					Provides: []ServiceType{"otherstuff"},
+					Type:     "forking",
+				},
 			},
-		},
-		{
-			// Test a multi-provider
-			`Name: TestService
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			service, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldBeNil)
+
+			So(compareService(service, tc.Service), ShouldBeTrue)
+		}
+	})
+
+	Convey("Basic parser with trailing newline", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService
+Needs: stuff
+Provides: otherstuff
+Startup: foo
+Shutdown: bar
+Type: forking
+`,
+				Service{
+					Name:     "TestService",
+					Startup:  "foo",
+					Shutdown: "bar",
+					Needs:    []ServiceType{"stuff"},
+					Provides: []ServiceType{"otherstuff"},
+					Type:     "forking",
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			service, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldBeNil)
+
+			So(compareService(service, tc.Service), ShouldBeTrue)
+		}
+	})
+
+	Convey("Test multi-provider", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService
 Needs: stuff
 Provides: otherstuff
 Provides: otherstuff2
@@ -57,120 +109,307 @@ Shutdown: bar
 Startup: foo
 Type: simple
 `,
-			Service{
-				Name:     "TestService",
-				Startup:  "foo",
-				Shutdown: "bar",
-				Needs:    []ServiceType{"stuff"},
-				Provides: []ServiceType{"otherstuff", "otherstuff2"},
-				Type:	  "simple",
+				Service{
+					Name:     "TestService",
+					Startup:  "foo",
+					Shutdown: "bar",
+					Needs:    []ServiceType{"stuff"},
+					Provides: []ServiceType{"otherstuff", "otherstuff2"},
+					Type:	  "simple",
+				},
 			},
-		},
-		{
-			// Other form of multiprovider
-			`Name: TestService
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			service, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldBeNil)
+
+			So(compareService(service, tc.Service), ShouldBeTrue)
+		}
+	})
+
+	Convey("Other form of multi-provider", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService
 Needs: stuff
 Provides: otherstuff is also, otherstuff2
 Startup: foo
 Shutdown: bar
 `,
-			Service{
-				Name:     "TestService",
-				Startup:  "foo",
-				Shutdown: "bar",
-				Needs:    []ServiceType{"stuff"},
-				Provides: []ServiceType{"otherstuff is also", "otherstuff2"},
-				Type:     "simple",
+				Service{
+					Name:     "TestService",
+					Startup:  "foo",
+					Shutdown: "bar",
+					Needs:    []ServiceType{"stuff"},
+					Provides: []ServiceType{"otherstuff is also", "otherstuff2"},
+					Type:     "simple",
+				},
 			},
-		},
-		{
-			// Valid strings
-			`Name: TestService-42.0
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			service, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldBeNil)
+
+			So(compareService(service, tc.Service), ShouldBeTrue)
+		}
+	})
+
+	Convey("Full config with valid strings", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService-42.0
 Needs: stuff-1.0
 Provides: otherstuff, foobar-1.0
 Startup: foo
 Shutdown: bar
 Type: oneshot
 `,
-			Service{
-				Name:     "TestService-42.0",
-				Startup:  "foo",
-				Shutdown: "bar",
-				Needs:    []ServiceType{"stuff-1.0"},
-				Provides: []ServiceType{"otherstuff", "foobar-1.0"},
-				Type:     "oneshot",
+				Service{
+					Name:     "TestService-42.0",
+					Startup:  "foo",
+					Shutdown: "bar",
+					Needs:    []ServiceType{"stuff-1.0"},
+					Provides: []ServiceType{"otherstuff", "foobar-1.0"},
+					Type:     "oneshot",
+				},
 			},
-		},
-	}
-	for i, tc := range tcs {
-		r := strings.NewReader(tc.Content)
-		service, err := ParseConfig(r, "test-service.service")
-		if err != nil {
-			t.Errorf("Unexpected error parsing test case %d: %v", i, err)
-		}
-		if !compareService(service, tc.Service) {
-			t.Errorf("Unexpected value parsing test case %d: got %v want %v", i, service, tc.Service)
-		}
-	}
-}
-func TestSetupConfigParsing(t *testing.T) {
-	tcs := []struct {
-		Content   string
-		Autologin []string
-		Persist   bool
-	}{
-		{
-			// Basic autologin
-			`Autologin: testuser`,
-			[]string{"testuser"},
-			false,
-		},
-		{
-			// Trailing newline and whitespace
-			`Autologin: test2   
-`,
-			[]string{"test2"},
-			false,
-		},
-		{
-			// Multiple tty autologin
-			`Autologin: test2   
-Autologin: foo
-`,
-			[]string{"test2", "foo"},
-			false,
-		},
-		{
-			// Persist test
-			`Persist: true`,
-			nil,
-			true,
-		},
-		{
-			// Persist and autologin test
-			"Autologin: foo\nAutologin:bar\nPersist: true",
-			[]string{"foo", "bar"},
-			true,
-		},
-	}
-	for i, tc := range tcs {
-		r := strings.NewReader(tc.Content)
-		autologins, persist, err := ParseSetupConfig(r)
-		if err != nil {
-			t.Fatal(err)
 		}
 
-		if len(autologins) != len(tc.Autologin) {
-			t.Errorf("Incorrect number of autologins for test case %d: got %v want %v", i, len(autologins), len(tc.Autologin))
-		} else {
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			service, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldBeNil)
+
+			So(compareService(service, tc.Service), ShouldBeTrue)
+		}
+	})
+
+	Convey("Invalid name", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestSe$@#rvice-42.0
+Needs: stuff-1.0
+Provides: otherstuff, foobar-1.0
+Startup: foo
+Shutdown: bar
+Type: oneshot
+`,
+				Service{},
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			_, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldNotBeNil)
+		}
+	})
+
+	Convey("Invalid Provides", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService-42.0
+Needs: stuff-1.0
+Provides: other$#@stuff, foobar-1.0
+Startup: foo
+Shutdown: bar
+Type: oneshot
+`,
+				Service{},
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			_, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldNotBeNil)
+		}
+	})
+
+	Convey("Invalid Needs", t, func() {
+		testCases := []struct {
+			Content string
+			Service Service
+		}{
+			{
+				`Name: TestService-42.0
+Needs: stu$#@ff-1.0
+Provides: otherstuff, foobar-1.0
+Startup: foo
+Shutdown: bar
+Type: oneshot
+`,
+				Service{},
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			_, err := ParseConfig(r, "test-service.service")
+			So(err, ShouldNotBeNil)
+		}
+	})
+}
+
+func Test_ParseSetupConfig(t *testing.T) {
+	Convey("Basic autologin", t, func() {
+		testCases := []struct {
+			Content string
+			Autologin []string
+			Persist bool
+		}{
+			{
+				`Autologin: testuser`,
+				[]string{"testuser"},
+				false,
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			autologins, persist, err := ParseSetupConfig(r)
+			So(err, ShouldBeNil)
+
+			So(len(autologins), ShouldEqual, len(tc.Autologin))
+
 			for j := range tc.Autologin {
-				if autologins[j] != tc.Autologin[j] {
-					t.Errorf("Incorrect autologin for test case %d[%d]: got %v want %v", i, j, autologins[j], tc.Autologin[j])
-				}
+				So(autologins[j], ShouldEqual, tc.Autologin[j])
 			}
+
+			So(persist, ShouldEqual, tc.Persist)
 		}
-		if persist != tc.Persist {
-			t.Errorf("Incorrect persistence for test case %d: got %v want %v", i, persist, tc.Persist)
+	})
+
+	Convey("Trailing newline and whitespace", t, func() {
+		testCases := []struct {
+			Content string
+			Autologin []string
+			Persist bool
+		}{
+			{
+				`Autologin: test2
+	`,
+				[]string{"test2"},
+				false,
+			},
 		}
-	}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			autologins, persist, err := ParseSetupConfig(r)
+			So(err, ShouldBeNil)
+
+			So(len(autologins), ShouldEqual, len(tc.Autologin))
+
+			for j := range tc.Autologin {
+				So(autologins[j], ShouldEqual, tc.Autologin[j])
+			}
+
+			So(persist, ShouldEqual, tc.Persist)
+		}
+	})
+
+	Convey("Multiple tty autologin", t, func() {
+		testCases := []struct {
+			Content string
+			Autologin []string
+			Persist bool
+		}{
+			{
+				`Autologin: test2
+Autologin: foo
+`,
+				[]string{"test2", "foo"},
+				false,
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			autologins, persist, err := ParseSetupConfig(r)
+			So(err, ShouldBeNil)
+
+			So(len(autologins), ShouldEqual, len(tc.Autologin))
+
+			for j := range tc.Autologin {
+				So(autologins[j], ShouldEqual, tc.Autologin[j])
+			}
+
+			So(persist, ShouldEqual, tc.Persist)
+		}
+	})
+
+	Convey("Persist test", t, func() {
+		testCases := []struct {
+			Content string
+			Autologin []string
+			Persist bool
+		}{
+			{
+				`Persist: true`,
+				nil,
+				true,
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			autologins, persist, err := ParseSetupConfig(r)
+			So(err, ShouldBeNil)
+
+			So(len(autologins), ShouldEqual, len(tc.Autologin))
+
+			for j := range tc.Autologin {
+				So(autologins[j], ShouldEqual, tc.Autologin[j])
+			}
+
+			So(persist, ShouldEqual, tc.Persist)
+		}
+	})
+
+	Convey("Persist and autologin test", t, func() {
+		testCases := []struct {
+			Content string
+			Autologin []string
+			Persist bool
+		}{
+			{
+				"Autologin: foo\nAutologin:bar\nPersist: true",
+				[]string{"foo", "bar"},
+				true,
+			},
+		}
+
+		for _, tc := range testCases {
+			r := strings.NewReader(tc.Content)
+			autologins, persist, err := ParseSetupConfig(r)
+			So(err, ShouldBeNil)
+
+			So(len(autologins), ShouldEqual, len(tc.Autologin))
+
+			for j := range tc.Autologin {
+				So(autologins[j], ShouldEqual, tc.Autologin[j])
+			}
+
+			So(persist, ShouldEqual, tc.Persist)
+		}
+	})
+
+
 }
