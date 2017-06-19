@@ -20,7 +20,7 @@ node('linux && x86_64 && go') {
 
             sh 'go get -u github.com/golang/lint/golint'
             sh 'go get -u github.com/tebeka/go2xunit'
-            sh 'go get github.com/Masterminds/glide'
+            //sh 'go get github.com/Masterminds/glide'
         }
 
         stage('Checkout') {
@@ -35,10 +35,10 @@ node('linux && x86_64 && go') {
             ).trim()
         String buildNumber = "${appVersion}-${env.BUILD_NUMBER}"
 
-        stage('Install dependencies') {
-            sh 'cd lutrainit && glide install'
-            sh 'cd lutractl && glide install'
-        }
+        // stage('Install dependencies') {
+        //    sh 'cd lutrainit && glide install'
+        //    sh 'cd lutractl && glide install'
+        //}
 
         stage('Test') {
             // Static check and publish warnings
