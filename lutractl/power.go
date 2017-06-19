@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/urfave/cli"
+	"errors"
 )
 
 // CmdShutdown CLI object
@@ -24,11 +25,19 @@ var CmdReboot = cli.Command {
 
 
 func doShutdown(ctx *cli.Context) error {
+	if !IsRoot() {
+		return errors.New("only root can do that")
+	}
+
 	_, err := GorpcDispatcherClient.Call("shutdown", nil)
 	return err
 }
 
 func doReboot(ctx *cli.Context) error {
+	if !IsRoot() {
+		return errors.New("only root can do that")
+	}
+
 	_, err := GorpcDispatcherClient.Call("reboot", nil)
 	return err
 }

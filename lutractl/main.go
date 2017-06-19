@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/urfave/cli"
 	"os"
+	"os/user"
 	"github.com/valyala/gorpc"
 	"github.com/rhaamo/lutrainit/shared/ipc"
 )
@@ -63,4 +64,15 @@ func main() {
 
 	// Let's go baby
 	app.Run(os.Args)
+}
+
+// IsRoot will tell you if you are root
+func IsRoot() bool {
+	curUser, err := user.Current()
+	if err != nil {
+		return false
+	}
+
+	// Yeah for whatever reason Uid and Gid are strings
+	return curUser.Uid == "0" && curUser.Gid == "0"
 }
