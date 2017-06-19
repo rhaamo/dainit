@@ -36,13 +36,15 @@ func TestServiceConfigParsing(t *testing.T) {
 Needs: stuff
 Provides: otherstuff
 Startup: foo
-Shutdown: bar`,
+Shutdown: bar
+Type: forking`,
 			Service{
 				Name:     "TestService",
 				Startup:  "foo",
 				Shutdown: "bar",
 				Needs:    []ServiceType{"stuff"},
 				Provides: []ServiceType{"otherstuff"},
+				Type: 	  "forking",
 			},
 		},
 		{
@@ -53,6 +55,7 @@ Provides: otherstuff
 Provides: otherstuff2
 Shutdown: bar
 Startup: foo
+Type: simple
 `,
 			Service{
 				Name:     "TestService",
@@ -60,6 +63,7 @@ Startup: foo
 				Shutdown: "bar",
 				Needs:    []ServiceType{"stuff"},
 				Provides: []ServiceType{"otherstuff", "otherstuff2"},
+				Type:	  "simple",
 			},
 		},
 		{
@@ -76,12 +80,31 @@ Shutdown: bar
 				Shutdown: "bar",
 				Needs:    []ServiceType{"stuff"},
 				Provides: []ServiceType{"otherstuff is also", "otherstuff2"},
+				Type:     "simple",
+			},
+		},
+		{
+			// Valid strings
+			`Name: TestService-42.0
+Needs: stuff-1.0
+Provides: otherstuff, foobar-1.0
+Startup: foo
+Shutdown: bar
+Type: oneshot
+`,
+			Service{
+				Name:     "TestService-42.0",
+				Startup:  "foo",
+				Shutdown: "bar",
+				Needs:    []ServiceType{"stuff-1.0"},
+				Provides: []ServiceType{"otherstuff", "foobar-1.0"},
+				Type:     "oneshot",
 			},
 		},
 	}
 	for i, tc := range tcs {
 		r := strings.NewReader(tc.Content)
-		service, err := ParseConfig(r)
+		service, err := ParseConfig(r, "test-service.service")
 		if err != nil {
 			t.Errorf("Unexpected error parsing test case %d: %v", i, err)
 		}

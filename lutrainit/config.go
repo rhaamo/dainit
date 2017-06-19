@@ -87,7 +87,7 @@ func parseSetupLine(line string) (autologin string, persist bool) {
 }
 
 // ParseConfig a single config file into the services it provides
-func ParseConfig(r io.Reader) (Service, error) {
+func ParseConfig(r io.Reader, filename string) (Service, error) {
 	s := Service{}
 	var line string
 	var err error
@@ -100,6 +100,12 @@ func ParseConfig(r io.Reader) (Service, error) {
 			if err := parseLine(line, &s); err != nil {
 				log.Println(err)
 			}
+
+			// Check for configuration sanity before returning
+			if err := checkSanity(&s, filename); err != nil {
+				return Service{}, err
+			}
+
 			return s, nil
 		case nil:
 			if err := parseLine(line, &s); err != nil {
@@ -134,12 +140,13 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			log.Println(err)
 			continue
 		}
-		s, err := ParseConfig(f)
+		s, err := ParseConfig(f, fstat.Name())
 		f.Close()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
+
 		for _, t := range s.Provides {
 			StartupServices[t] = append(StartupServices[t], &s)
 		}
@@ -162,6 +169,27 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		LoadedServices[ipc.ServiceName(s.Name)] = ipcLoadedService
 
 	}
+	return nil
+}
+
+func checkSanity(service *Service, filename string) error {
+
+	if !ipc.IsCustAscii(string(service.Name)) {
+		return fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", filename, service.Name)
+	}
+
+	for _, provide := range service.Provides {
+		if !ipc.IsCustAscii(string(provide)) {
+			return fmt.Errorf("%s has invalid provides '%s', only a-Z0-9_-. allowed", filename, provide)
+		}
+	}
+
+	for _, need := range service.Needs {
+		if !ipc.IsCustAscii(string(need)) {
+			return fmt.Errorf("%s has invalid needs '%s', only a-Z0-9_-. allowed", filename, need)
+		}
+	}
+
 	return nil
 }
 

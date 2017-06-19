@@ -1,5 +1,7 @@
 package ipc
 
+import "regexp"
+
 // IpcVersion used with Version command of lutractl
 // Returns server version to the client
 type IpcVersion struct {
@@ -130,3 +132,6 @@ func (la LastAction) String() string {
 		return "really unknown"
 	}
 }
+
+// IsCustAscii is a custom regexp checker for sanity
+var IsCustAscii = regexp.MustCompile(`[a-zA-Z0-9_\-.]+$`).MatchString
