@@ -37,6 +37,8 @@ func main() {
 		CmdVersion,
 		CmdStats,
 		CmdStatus,
+		CmdReboot,
+		CmdShutdown,
 	}
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 

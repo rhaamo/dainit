@@ -30,6 +30,16 @@ func socketInitctl() {
 		return returnStats()
 	})
 
+	d.AddFunc("shutdown", func() {
+		doShutdown(false)
+		// will never return, sorry
+	})
+
+	d.AddFunc("reboot", func() {
+		doShutdown(true)
+		// will never return, sorry
+	})
+
 	// Returns processes statuses
 	d.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
 		return returnStatus(status)

@@ -39,6 +39,7 @@ func waitForDeath() error {
 
 // KillAll processes on the system.
 func KillAll() {
+	println("[lutra] Killing everything I can find...")
 	fmt.Fprintf(os.Stderr, "Killing system processes..\n")
 	// Try to send a sigterm
 	pids, err := getAllProcesses()
@@ -106,4 +107,27 @@ func getAllProcesses() ([]*os.Process, error) {
 		rprocs = append(rprocs, proc)
 	}
 	return rprocs, nil
+}
+
+
+func doShutdown(reboot bool) {
+	virtfs := []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
+	netfs := []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
+
+	// TODO: Run shutdown scripts for services that are started instead
+	// of just sending them a SIGTERM right off the bat..
+	KillAll()
+
+	// This needs to be done after all the processes are dead, otherwise
+	// it will fail due to being in use.
+	println("[lutra] Unmounting filesystems...")
+	UnmountAllExcept(append(netfs, virtfs...))
+
+	// Halt the system explicitly to prevent a kernel panic.
+	// Or reboot, as wanted.
+	if reboot {
+		syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART)
+	} else {
+		syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
+	}
 }
