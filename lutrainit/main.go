@@ -23,6 +23,11 @@ var (
 	// LoadedServices is the list of services loaded, with last known state
 	LoadedServices = make(map[ipc.ServiceName]*ipc.LoadedService)
 
+	// NetFs design the list of known network file systems to be avoided mounted at boot
+	NetFs = []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
+	// VirtFs design the list of known virtual file systems to avoid unmounting at shutdown
+	VirtFs = []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
+
 	// Theses two last should only filled by LDFLAGS, see Makefile
 
 	// LutraBuildTime is the time of the build
@@ -92,9 +97,8 @@ func main() {
 
 	// Mount local filesytems
 	println("[lutra] Mounting local file systems")
-	netfs := []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
 
-	MountAllExcept(netfs)
+	MountAllExcept(NetFs)
 	// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
 	run("swapon", "-a")
 
