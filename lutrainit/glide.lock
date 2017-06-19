@@ -5,10 +5,6 @@ imports:
   version: 8492a6faa632c31ba82f562b53b4a6e5eacf2732
 - name: github.com/mitchellh/go-ps
   version: 4fdf99ab29366514c69ccccddab5dc58b8d84062
-- name: github.com/rhaamo/lutrainit
-  version: 074605e7f54c39c0b895af2e615b1ace3c3b9ed3
-  subpackages:
-  - shared/ipc
 - name: github.com/smartystreets/goconvey
   version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
   subpackages:
