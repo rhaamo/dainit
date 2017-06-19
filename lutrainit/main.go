@@ -75,6 +75,11 @@ func main() {
 	println("~~ LutraInit version", LutraVersion, "-", LutraBuildGitHash, "~~")
 	println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
+	if !thePidOne() {
+		println("I'm sorry but I'm supposed to be run as an init.")
+		os.Exit(-1)
+	}
+
 	// First of all, we need to be sure we have a correct PATH setted
 	// This is usefull if we use lutrainit in an initramfs since PATH would be unset
 	curEnvPath := os.Getenv("PATH")
@@ -162,4 +167,12 @@ func main() {
 
 	// The tty exited. Kill processes, unmount filesystems and halt the system.
 	doShutdown(false)
+}
+
+func thePidOne() bool {
+	if os.Getpid() == 1 {
+		return true
+	} else {
+		return false
+	}
 }
