@@ -227,3 +227,36 @@ func ParseSetupConfig(fname string) (err error) {
 
 	return err
 }
+
+// ReloadConfig both Main and Services ones
+func ReloadConfig() (err error) {
+	clog.Info("Reloading configurations...")
+	if err := ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
+		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
+		return err
+	}
+	clog.Info("Main config reloaded.")
+
+	if err = setupLogging(true); err != nil {
+		clog.Error(2, "[lutra] Failed to re-setup logging: %s", err.Error())
+		return err
+	}
+	clog.Info("Logging updated.")
+
+	// First clear the old services maps
+	for k := range LoadedServices {
+		delete(LoadedServices, k)
+	}
+	for k := range StartupServices {
+		delete(StartupServices, k)
+	}
+	// Then re-parse
+	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
+	if err != nil {
+		clog.Error(2, "[lutra] Cannot re-parse service configs: %s", err.Error())
+		return err
+	}
+	clog.Info("Services reloaded.")
+
+	return err
+}

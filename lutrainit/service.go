@@ -163,7 +163,7 @@ func(s *Service) StartSimple() {
 		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
 	} else {
 		s.state = stopped
-		clog.Info("[lutra] Service stopped: %s", s.Name)
+		clog.Info("[lutra] Service stopped:	 %s", s.Name)
 		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
 		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
 		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()

@@ -48,6 +48,14 @@ func socketInitctl() {
 		return returnStatus(status)
 	})
 
+	d.AddFunc("reload", func() *ipc.AnswerReload {
+		err := ReloadConfig()
+		if err != nil {
+			return &ipc.AnswerReload{Err: true, ErrStr: err.Error()}
+		}
+		return &ipc.AnswerReload{Err: false}
+	})
+
 	s := gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
 	clog.Info("[lutra] RPC starting on socket: %s", s.Addr)
 

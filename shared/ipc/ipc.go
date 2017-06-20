@@ -58,6 +58,12 @@ type AskStatus struct {
 	All			bool
 }
 
+// AnswerReload is a reload answer
+type AnswerReload struct {
+	Err			bool
+	ErrStr		string
+}
+
 // ServiceName specify service name
 type ServiceName string
 // RunState represents one of the states the service can be
