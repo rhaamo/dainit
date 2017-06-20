@@ -81,7 +81,7 @@ func main() {
 	clog.Info("~~ LutraInit %s starting...", LutraVersion)
 	clog.Info("~~ Build commit %s", LutraBuildGitHash)
 	clog.Info("~~ Build time %s", LutraBuildTime)
-	
+
 	if !thePidOne() {
 		clog.Warn("[lutra] I'm sorry but I'm supposed to be run as an init.")
 		os.Exit(-1)
@@ -171,9 +171,9 @@ func main() {
 func thePidOne() bool {
 	if os.Getpid() == 1 {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func setupLogging(withFile bool) (err error) {
