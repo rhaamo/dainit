@@ -78,10 +78,10 @@ func main() {
 	}
 
 	// First of first, who are we ?
-	clog.Info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	clog.Info("~~ LutraInit version %s - %s ~~",LutraVersion, LutraBuildGitHash)
-	clog.Info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
+	clog.Info("~~ LutraInit %s starting...", LutraVersion)
+	clog.Info("~~ Build commit %s", LutraBuildGitHash)
+	clog.Info("~~ Build time %s", LutraBuildTime)
+	
 	if !thePidOne() {
 		clog.Warn("[lutra] I'm sorry but I'm supposed to be run as an init.")
 		os.Exit(-1)
