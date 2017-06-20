@@ -17,9 +17,11 @@ var (
 	// LutraVersion should match the one in lutractl/main.go
 	LutraVersion = "0.1"
 
+	// Should only be used for the FIRST startup
 	// StartupServices is the in-memory map list of processes started on a full-start boot
 	StartupServices = make(map[ServiceType][]*Service)
 
+	// Used for any other actions, start, stop, etc.
 	// LoadedServices is the list of services loaded, with last known state
 	LoadedServices = make(map[ipc.ServiceName]*ipc.LoadedService)
 
