@@ -29,7 +29,7 @@ func getStatus(ctx *cli.Context) error {
 
 	res, err := GorpcDispatcherClient.Call("status", req)
 
-	resIpc := res.(map[ipc.ServiceName]*ipc.LoadedService)
+	resIpc := res.(map[ipc.ServiceName]*ipc.Service)
 
 	if len(resIpc) == 0 && !req.All {
 		fmt.Printf("No service matching '%s'\n", req.Name)

@@ -44,7 +44,7 @@ func socketInitctl() {
 	})
 
 	// Returns processes statuses
-	d.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
+	d.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.Service {
 		return returnStatus(status)
 	})
 
@@ -108,15 +108,38 @@ func returnStats() *ipc.SysStatus {
 	}
 }
 
-func returnStatus(req *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
+func returnStatus(req *ipc.AskStatus) (services map[ipc.ServiceName]*ipc.Service) {
+	services = make(map[ipc.ServiceName]*ipc.Service)
+	
 	if req.All {
-		return LoadedServices
+		for k, v := range LoadedServices {
+			services[ipc.ServiceName(k)] = &ipc.Service{
+				Name: ipc.ServiceName(v.Name),
+				Type: v.Type,
+				Description: v.Description,
+				State: ipc.RunState(v.State),
+				LastKnownPID: v.LastKnownPID,
+				LastAction: ipc.LastAction(v.LastAction),
+				LastActionAt: v.LastActionAt,
+				LastMessage: v.LastMessage,
+			}
+		}
+	} else {
+		if proc, exists := LoadedServices[ServiceName(req.Name)]; exists {
+			services[ipc.ServiceName(proc.Name)] = &ipc.Service{
+				Name:         ipc.ServiceName(proc.Name),
+				Type:         proc.Type,
+				Description:  proc.Description,
+				State:        ipc.RunState(proc.State),
+				LastKnownPID: proc.LastKnownPID,
+				LastAction:   ipc.LastAction(proc.LastAction),
+				LastActionAt: proc.LastActionAt,
+				LastMessage:  proc.LastMessage,
+			}
+		} else {
+			return nil
+		}
 	}
 
-	if proc, exists := LoadedServices[ipc.ServiceName(req.Name)]; exists {
-		procList := make(map[ipc.ServiceName]*ipc.LoadedService)
-		procList[ipc.ServiceName(req.Name)] = proc
-		return procList
-	}
-	return nil
+	return services
 }

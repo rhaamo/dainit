@@ -6,53 +6,117 @@ import (
 	"os/exec"
 	"sync"
 	"time"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"github.com/go-clog/clog"
+	"io/ioutil"
+	"strconv"
+	"bytes"
+	"github.com/mitchellh/go-ps"
 )
 
-type runState uint8
+// ServiceName defines the service name
+type ServiceName string
+
+// ServiceType provides or needs
+type ServiceType string
+
+type RunState uint8
 
 // Types of valid runState
 const (
-	notStarted = runState(iota)
-	starting
-	started
-	stopped
-	errored
+	NotStarted = RunState(iota)
+	Starting
+	Started
+	Stopped
+	Errored
 )
 
-func (rs runState) String() string {
+func (rs RunState) String() string {
 	switch rs {
-	case notStarted:
+	case NotStarted:
 		return "not started"
-	case starting:
+	case Starting:
 		return "being started"
-	case started:
+	case Started:
 		return "already started"
-	case stopped:
+	case Stopped:
 		return "stopped"
-	case errored:
+	case Errored:
 		return "errored"
 	default:
 		return "in an invalid state"
 	}
 }
 
+// LastAction represent the latest action done to the service
+type LastAction uint8
+
+// Last actions constants
+const (
+	Unknown = LastAction(iota)
+	Start
+	Stop
+	Reload
+	Restart
+	Forcekill
+)
+
+func (la LastAction) String() string {
+	switch la {
+	case Unknown:
+		return "unknown"
+	case Start:
+		return "start"
+	case Stop:
+		return "stop"
+	case Reload:
+		return "reload"
+	case Restart:
+		return "restart"
+	case Forcekill:
+		return "force kill"
+	default:
+		return "really unknown"
+	}
+}
+
+// Command defines a command string used by Startup or Shutdown
+type Command string
+
+func (c Command) String() string {
+	return string(c)
+}
+
+type StartupService struct {
+	Name		ServiceName
+	AutoStart	bool
+
+	Provides 	[]ServiceType
+	Needs    	[]ServiceType
+}
+
 // Service represents a struct with usefull infos used for management of services
 type Service struct {
-	Name     	ServiceName
-	Description	string
-	Startup  	Command
-	Shutdown 	Command
+	Name		ServiceName
 	AutoStart	bool
 
 	Provides 	[]ServiceType
 	Needs    	[]ServiceType
 
-	Type		string	// forking or simple
-	PIDFile		string
+	Description		string		// Currently not used
+	State			RunState
 
-	state 		runState
+	LastAction		LastAction
+	LastActionAt	int64		// Timestamp of the last action (UTC)
+	LastMessage		string
+	LastKnownPID	int
+
+	Type			string // forking or simple
+	PIDFile			string
+
+	Startup  	Command
+	Shutdown 	Command
+
+	Deleted			bool
 }
 
 // StartServices starts all declared services at start
@@ -64,6 +128,7 @@ func StartServices() {
 	for _, services := range StartupServices {
 		wg.Add(len(services))
 		for _, s := range services {
+			lS := LoadedServices[s.Name]
 			go func(s *Service) {
 				// TODO: This should ensure that Needs are satisfiable instead of getting into an
 				// infinite loop when they're not.
@@ -73,7 +138,7 @@ func StartServices() {
 					time.Sleep(2 * time.Second)
 
 				}
-				if s.state == notStarted && s.AutoStart {
+				if s.State == NotStarted && s.AutoStart {
 					// Start the service
 					if s.Type == "oneshot" || s.Type == "forking" {
 						if err := s.Start(); err != nil {
@@ -94,38 +159,38 @@ func StartServices() {
 				}
 				startedMu.Unlock()
 				wg.Done()
-			}(s)
+			}(lS)
 		}
 	}
 	wg.Wait()
 }
 
 // Start the Service s. if type is oneshot or forking
-func (s *Service) Start() error {
-	if s.state != notStarted {
-		return fmt.Errorf("Service %v is %v", s.Name, s.state.String())
+func(s Service) Start() error {
+	if s.State != NotStarted {
+		return fmt.Errorf("Service %v is %v", s.Name, s.State.String())
 	}
-	s.state = starting
-	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Starting
-	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
-	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+	s.State = Starting
+	LoadedServices[s.Name].State = Starting
+	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[s.Name].LastAction = Start
 
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		s.state = errored
-		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Errored
-		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
-		LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+		s.State = Errored
+		LoadedServices[s.Name].State = Errored
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = Start
 
 		clog.Error(2,"[lutra] Error starting service %s: %s", s.Name, err.Error())
 
 		return err
 	}
-	s.state = started
-	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
-	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
-	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
+	s.State = Started
+	LoadedServices[s.Name].State = Started
+	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[s.Name].LastAction = Start
 
 	clog.Info("[lutra] Started service %s", s.Name)
 
@@ -133,45 +198,44 @@ func (s *Service) Start() error {
 }
 
 // StartSimple and track the PID and process state (for simple service without auto-fork function)
-func(s *Service) StartSimple() {
-	s.state = starting
-	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Starting
-	LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
-	LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Start
-	LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+func(s Service) StartSimple() {
+	s.State = Starting
+	LoadedServices[s.Name].State = Starting
+	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+	LoadedServices[s.Name].LastAction = Start
+	LoadedServices[s.Name].LastKnownPID = 0
 
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
 		clog.Error(2,"[lutra] Service %s exited with error: %s", s.Name, err.Error())
-		s.state = errored
-		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Errored
-		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
-		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+		s.State = Errored
+		LoadedServices[s.Name].State = Errored
+		LoadedServices[s.Name].LastMessage = err.Error()
+		LoadedServices[s.Name].LastKnownPID = 0
 		return
 	}
 	// Waiting for the command to finish
-	s.state = started
-	LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Started
-	LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = cmd.Process.Pid
+	s.State = Started
+	LoadedServices[s.Name].State = Started
+	LoadedServices[s.Name].LastKnownPID = cmd.Process.Pid
 	clog.Info("[lutra] Started service %s", s.Name)
 
 	err := cmd.Wait()
 	if err != nil {
 		clog.Error(2, "[lutra] Service %s finished with error: %s", s.Name, err.Error())
-		s.state = stopped
-		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
-		LoadedServices[ipc.ServiceName(s.Name)].LastMessage = err.Error()
-		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
+		s.State = Stopped
+		LoadedServices[s.Name].State = Stopped
+		LoadedServices[s.Name].LastMessage = err.Error()
+		LoadedServices[s.Name].LastKnownPID = 0
 	} else {
-		s.state = stopped
+		s.State = Stopped
 		clog.Info("[lutra] Service stopped:	 %s", s.Name)
-		LoadedServices[ipc.ServiceName(s.Name)].State = ipc.Stopped
-		LoadedServices[ipc.ServiceName(s.Name)].LastKnownPID = 0
-		LoadedServices[ipc.ServiceName(s.Name)].LastActionAt = time.Now().UTC().Unix()
-		LoadedServices[ipc.ServiceName(s.Name)].LastAction = ipc.Stop
+		LoadedServices[s.Name].State = Stopped
+		LoadedServices[s.Name].LastKnownPID = 0
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = Stop
 	}
-
 }
 
 // NeedsSatisfied if all of s's needs are satified by the passed list of provided types

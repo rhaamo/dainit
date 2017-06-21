@@ -1,6 +1,10 @@
 package ipc
 
-import "regexp"
+import (
+	"regexp"
+)
+
+// WARNING: Huges parts of this file should be synced with content of lutrainit/lutrainit/service.go
 
 // Version used with Version command of lutractl
 // Returns server version to the client
@@ -64,55 +68,6 @@ type AnswerReload struct {
 	ErrStr		string
 }
 
-// ServiceName specify service name
-type ServiceName string
-// RunState represents one of the states the service can be
-type RunState uint8
-
-// LoadedService is a lightweight Service
-type LoadedService struct {
-	Name			ServiceName
-	Description		string		// Currently not used
-	State			RunState
-
-	LastAction		LastAction
-	LastActionAt	int64		// Timestamp of the last action (UTC)
-	LastMessage		string
-	LastKnownPID	int
-
-	Type			string // forking or simple
-	PIDFile			string
-	AutoStart		bool
-
-	Deleted			bool
-}
-
-// Types of valid runState
-const (
-	NotStarted = RunState(iota)
-	Starting
-	Started
-	Stopped
-	Errored
-)
-
-func (rs RunState) String() string {
-	switch rs {
-	case NotStarted:
-		return "not started"
-	case Starting:
-		return "being started"
-	case Started:
-		return "already started"
-	case Stopped:
-		return "stopped"
-	case Errored:
-		return "errored"
-	default:
-		return "in an invalid state"
-	}
-}
-
 // LastAction represent the latest action done to the service
 type LastAction uint8
 
@@ -143,6 +98,87 @@ func (la LastAction) String() string {
 	default:
 		return "really unknown"
 	}
+}
+
+// Command defines a command string used by Startup or Shutdown
+type Command string
+
+func (c Command) String() string {
+	return string(c)
+}
+
+// ServiceName defines the service name
+type ServiceName string
+
+// ServiceType provides or needs
+type ServiceType string
+
+type RunState uint8
+
+// Types of valid runState
+const (
+	NotStarted = RunState(iota)
+	Starting
+	Started
+	Stopped
+	Errored
+)
+
+func (rs RunState) String() string {
+	switch rs {
+	case NotStarted:
+		return "not started"
+	case Starting:
+		return "being started"
+	case Started:
+		return "already started"
+	case Stopped:
+		return "stopped"
+	case Errored:
+		return "errored"
+	default:
+		return "in an invalid state"
+	}
+}
+
+
+// ServiceAction for start/stop/restart
+type ServiceAction struct {
+	Name		string
+	Action		LastAction
+}
+
+type ServiceActionAnswer struct {
+	Name		string
+	Action		LastAction
+	Err			bool
+	ErrStr		string
+}
+
+// Service represents a struct with usefull infos used for management of services
+type Service struct {
+	Name		ServiceName
+	AutoStart	bool
+
+	Provides 	[]ServiceType
+	Needs    	[]ServiceType
+
+	Description		string		// Currently not used
+	State			RunState
+
+	LastAction		LastAction
+	LastActionAt	int64		// Timestamp of the last action (UTC)
+	LastMessage		string
+	LastKnownPID	int
+
+	Type			string // forking or simple
+	PIDFile			string
+
+	Startup  	Command
+	Shutdown 	Command
+	CheckAlive  Command
+
+	Deleted			bool
 }
 
 // IsCustASCII is a custom regexp checker for sanity

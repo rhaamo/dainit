@@ -28,7 +28,6 @@ var (
 )
 
 
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "lutractl"
@@ -52,7 +51,7 @@ func main() {
 
 	GorpcDispatcher = gorpc.NewDispatcher()
 
-	GorpcDispatcher.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.LoadedService {
+	GorpcDispatcher.AddFunc("status", func(status *ipc.AskStatus) map[ipc.ServiceName]*ipc.Service {
 		println("wanting client status")
 		return nil
 	})

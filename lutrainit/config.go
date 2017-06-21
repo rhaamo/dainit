@@ -13,19 +13,6 @@ import (
 	"github.com/go-ini/ini"
 )
 
-// ServiceName defines the service name
-type ServiceName string
-
-// ServiceType defines the service type
-type ServiceType string
-
-// Command defines a command string used by Startup or Shutdown
-type Command string
-
-func (c Command) String() string {
-	return string(c)
-}
-
 var (
 	// MainConfig of the daemon
 	MainConfig struct {
@@ -100,7 +87,10 @@ func parseLine(line string, s *Service) error {
 
 // ParseConfig a single config file into the services it provides
 func ParseConfig(r io.Reader, filename string) (Service, error) {
-	s := Service{}
+	s := Service{
+		Deleted: false,
+		AutoStart: true,
+	}
 	var line string
 	var err error
 	scanner := bufio.NewReader(r)
@@ -161,33 +151,27 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 
 		for _, t := range s.Provides {
 			if s.AutoStart {
-				StartupServices[t] = append(StartupServices[t], &s)
-			}
-		}
+				StartupServices[t] = append(StartupServices[t], &StartupService{
+					Name: s.Name,
+					AutoStart: s.AutoStart,
 
-		// Populate the Loaded Services thingy
-		// We also add services which are not Autostart: true
-		// since we will need to be able to start/stop them
-		ipcLoadedService :=  &ipc.LoadedService{
-			Name: ipc.ServiceName(s.Name),
-			Description: s.Description,
-			PIDFile: s.PIDFile,
-			Type: s.Type,
-			Deleted: false,
-			AutoStart: true,
+					Needs: s.Needs,
+					Provides: s.Provides,
+				})
+			}
 		}
 
 		// If we are not reloading, set initial state and actions
 		if !reloading {
-			ipcLoadedService.State = ipc.NotStarted
-			ipcLoadedService.LastAction = ipc.Unknown
-			ipcLoadedService.LastActionAt = time.Now().UTC().Unix()
+			s.State = NotStarted
+			s.LastAction = Unknown
+			s.LastActionAt = time.Now().UTC().Unix()
 		} else {
 			// We are reloading, AND, the init service is still present, mark it as not-deleted
-			ipcLoadedService.Deleted = false
+			s.Deleted = false
 		}
 
-		LoadedServices[ipc.ServiceName(s.Name)] = ipcLoadedService
+		LoadedServices[s.Name] = &s
 
 	}
 	return nil

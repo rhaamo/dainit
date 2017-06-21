@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"github.com/go-clog/clog"
 )
 
@@ -19,11 +18,11 @@ var (
 
 	// Should only be used for the FIRST startup
 	// StartupServices is the in-memory map list of processes started on a full-start boot
-	StartupServices = make(map[ServiceType][]*Service)
+	StartupServices = make(map[ServiceType][]*StartupService)
 
 	// Used for any other actions, start, stop, etc.
 	// LoadedServices is the list of services loaded, with last known state
-	LoadedServices = make(map[ipc.ServiceName]*ipc.LoadedService)
+	LoadedServices = make(map[ServiceName]*Service)
 
 	// NetFs design the list of known network file systems to be avoided mounted at boot
 	NetFs = []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
