@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/urfave/cli"
 	"github.com/rhaamo/lutrainit/shared/ipc"
+	"errors"
 )
 
 // CmdReload CLI object
@@ -16,6 +17,12 @@ var CmdReload = cli.Command {
 
 func doReload(ctx *cli.Context) error {
 	res, err := GorpcDispatcherClient.Call("reload", nil)
+
+	if err != nil {
+		return err
+	} else if res == nil {
+		return errors.New("result is <nil>")
+	}
 
 	resIpc := res.(*ipc.AnswerReload)
 
