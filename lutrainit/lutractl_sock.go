@@ -110,7 +110,7 @@ func returnStats() *ipc.SysStatus {
 
 func returnStatus(req *ipc.AskStatus) (services map[ipc.ServiceName]*ipc.Service) {
 	services = make(map[ipc.ServiceName]*ipc.Service)
-	
+
 	if req.All {
 		for k, v := range LoadedServices {
 			services[ipc.ServiceName(k)] = &ipc.Service{
@@ -122,6 +122,7 @@ func returnStatus(req *ipc.AskStatus) (services map[ipc.ServiceName]*ipc.Service
 				LastAction: ipc.LastAction(v.LastAction),
 				LastActionAt: v.LastActionAt,
 				LastMessage: v.LastMessage,
+				Deleted: v.Deleted,
 			}
 		}
 	} else {
@@ -135,6 +136,7 @@ func returnStatus(req *ipc.AskStatus) (services map[ipc.ServiceName]*ipc.Service
 				LastAction:   ipc.LastAction(proc.LastAction),
 				LastActionAt: proc.LastActionAt,
 				LastMessage:  proc.LastMessage,
+				Deleted: proc.Deleted,
 			}
 		} else {
 			return nil
