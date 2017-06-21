@@ -92,6 +92,8 @@ func parseLine(line string, s *Service) error {
 				s.Type = "simple"
 			}
 		}
+	} else if strings.HasPrefix(line, "Autostart:") {
+		s.AutoStart = strings.TrimSpace(strings.TrimPrefix(line, "Autostart:")) == "true"
 	}
 	return nil
 }
@@ -158,16 +160,21 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		}
 
 		for _, t := range s.Provides {
-			StartupServices[t] = append(StartupServices[t], &s)
+			if s.AutoStart {
+				StartupServices[t] = append(StartupServices[t], &s)
+			}
 		}
 
 		// Populate the Loaded Services thingy
+		// We also add services which are not Autostart: true
+		// since we will need to be able to start/stop them
 		ipcLoadedService :=  &ipc.LoadedService{
 			Name: ipc.ServiceName(s.Name),
 			Description: s.Description,
 			PIDFile: s.PIDFile,
 			Type: s.Type,
 			Deleted: false,
+			AutoStart: true,
 		}
 
 		// If we are not reloading, set initial state and actions

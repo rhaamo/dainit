@@ -82,6 +82,8 @@ type LoadedService struct {
 
 	Type			string // forking or simple
 	PIDFile			string
+	AutoStart		bool
+
 	Deleted			bool
 }
 

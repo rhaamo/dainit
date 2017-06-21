@@ -44,6 +44,8 @@ type Service struct {
 	Description	string
 	Startup  	Command
 	Shutdown 	Command
+	AutoStart	bool
+
 	Provides 	[]ServiceType
 	Needs    	[]ServiceType
 
@@ -53,7 +55,7 @@ type Service struct {
 	state 		runState
 }
 
-// StartServices starts all declared services
+// StartServices starts all declared services at start
 func StartServices() {
 	wg := sync.WaitGroup{}
 
@@ -71,7 +73,7 @@ func StartServices() {
 					time.Sleep(2 * time.Second)
 
 				}
-				if s.state == notStarted {
+				if s.state == notStarted && s.AutoStart {
 					// Start the service
 					if s.Type == "oneshot" || s.Type == "forking" {
 						if err := s.Start(); err != nil {
