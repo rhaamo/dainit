@@ -7,6 +7,7 @@ import (
 
 // CmdShutdown CLI object
 var CmdShutdown = cli.Command {
+	Aliases: []string{"halt"},
 	Name: "shutdown",
 	Usage: "Shutdowns the system",
 	Description: "Shutdowns the system",
@@ -16,6 +17,7 @@ var CmdShutdown = cli.Command {
 
 // CmdReboot CLI object
 var CmdReboot = cli.Command {
+	Aliases: []string{"restart"},
 	Name: "reboot",
 	Usage: "Reboot the system",
 	Description: "Reboot the system",
