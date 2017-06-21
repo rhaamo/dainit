@@ -82,6 +82,7 @@ type LoadedService struct {
 
 	Type			string // forking or simple
 	PIDFile			string
+	Deleted			bool
 }
 
 // Types of valid runState

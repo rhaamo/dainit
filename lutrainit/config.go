@@ -167,6 +167,7 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			Description: s.Description,
 			PIDFile: s.PIDFile,
 			Type: s.Type,
+			Deleted: false,
 		}
 
 		// If we are not reloading, set initial state and actions
@@ -174,6 +175,9 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			ipcLoadedService.State = ipc.NotStarted
 			ipcLoadedService.LastAction = ipc.Unknown
 			ipcLoadedService.LastActionAt = time.Now().UTC().Unix()
+		} else {
+			// We are reloading, AND, the init service is still present, mark it as not-deleted
+			ipcLoadedService.Deleted = false
 		}
 
 		LoadedServices[ipc.ServiceName(s.Name)] = ipcLoadedService
@@ -243,18 +247,26 @@ func ReloadConfig() (err error) {
 	}
 	clog.Info("Logging updated.")
 
-	// First clear the old services maps
-	for k := range LoadedServices {
-		delete(LoadedServices, k)
+	// Mark all as deleted
+	for k, _ := range LoadedServices {
+		LoadedServices[k].Deleted = true
 	}
-	for k := range StartupServices {
-		delete(StartupServices, k)
-	}
+
 	// Then re-parse
-	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
+	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", true)
 	if err != nil {
 		clog.Error(2, "[lutra] Cannot re-parse service configs: %s", err.Error())
 		return err
+	}
+
+	dissappeared := 0
+	for k, _ := range LoadedServices {
+		if LoadedServices[k].Deleted {
+			dissappeared++
+		}
+	}
+	if dissappeared > 0 {
+		clog.Info("[lutra] It looks like %d Services files dissappeared :|", dissappeared)
 	}
 	clog.Info("Services reloaded.")
 

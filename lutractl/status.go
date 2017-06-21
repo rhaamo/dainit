@@ -42,6 +42,9 @@ func getStatus(ctx *cli.Context) error {
 	for _, loadedService := range resIpc {
 		fmt.Printf("Service: %s, of type %s\n", loadedService.Name, loadedService.Type)
 		fmt.Printf("Description: %s\n", loadedService.Description)
+		if loadedService.Deleted {
+			fmt.Printf("WARNING: This service init have been deleted from configuration directory.\n")
+		}
 		fmt.Printf("Status: %s\n", loadedService.State.String())
 		if loadedService.Type == "simple" && loadedService.State == ipc.Started && loadedService.LastKnownPID >= 2{
 			fmt.Printf("Lask known PID: %d\n", loadedService.LastKnownPID)
