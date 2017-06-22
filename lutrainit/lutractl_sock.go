@@ -56,6 +56,36 @@ func socketInitctl() {
 		return &ipc.AnswerReload{Err: false}
 	})
 
+	d.AddFunc("start", func(req *ipc.ServiceAction) *ipc.ServiceActionAnswer {
+		answer := &ipc.ServiceActionAnswer{Name: req.Name, Action: ipc.Start}
+
+		if proc, exists := LoadedServices[ServiceName(req.Name)]; exists {
+			err := CheckAndStartService(proc)
+			if err != nil {
+				answer.Err = true
+				answer.ErrStr = err.Error()
+				return answer
+			}
+		}
+
+		return answer
+	})
+
+	d.AddFunc("stop", func(req *ipc.ServiceAction) *ipc.ServiceActionAnswer {
+		answer := &ipc.ServiceActionAnswer{Name: req.Name, Action: ipc.Stop}
+
+		if proc, exists := LoadedServices[ServiceName(req.Name)]; exists {
+			err := CheckAndStopService(proc)
+			if err != nil {
+				answer.Err = true
+				answer.ErrStr = err.Error()
+				return answer
+			}
+		}
+
+		return answer
+	})
+
 	s := gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
 	clog.Info("[lutra] RPC starting on socket: %s", s.Addr)
 

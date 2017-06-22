@@ -40,6 +40,9 @@ func main() {
 		CmdReboot,
 		CmdShutdown,
 		CmdReload,
+		CmdStart,
+		CmdStop,
+		CmdRestart,
 	}
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 
@@ -48,6 +51,8 @@ func main() {
 	gorpc.RegisterType(&ipc.Version{})
 	gorpc.RegisterType(&ipc.AskStatus{})
 	gorpc.RegisterType(&ipc.AnswerReload{})
+	gorpc.RegisterType(&ipc.ServiceAction{})
+	gorpc.RegisterType(&ipc.ServiceActionAnswer{})
 
 	GorpcDispatcher = gorpc.NewDispatcher()
 

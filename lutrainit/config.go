@@ -64,6 +64,10 @@ func parseLine(line string, s *Service) error {
 		if s.PIDFile == "" {
 			s.PIDFile = strings.TrimSpace(strings.TrimPrefix(line, "PIDFile:"))
 		}
+	} else if strings.HasPrefix(line, "CheckAlive:") {
+		if s.CheckAlive == "" {
+			s.CheckAlive = Command(strings.TrimSpace(strings.TrimPrefix(line, "CheckAlive:")))
+		}
 	} else if strings.HasPrefix(line, "Type:") {
 		if s.Type == "" {
 			serviceType := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
