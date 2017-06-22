@@ -10,6 +10,9 @@ import (
 	"os/exec"
 	"strings"
 	"github.com/go-clog/clog"
+	"syscall"
+	"fmt"
+	"github.com/valyala/gorpc"
 )
 
 var (
@@ -28,6 +31,8 @@ var (
 	NetFs = []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
 	// VirtFs design the list of known virtual file systems to avoid unmounting at shutdown
 	VirtFs = []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
+
+	GoRpcServer = &gorpc.Server{}
 
 	// Theses two last should only filled by LDFLAGS, see Makefile
 
@@ -71,6 +76,13 @@ func SetHostname(hostname []byte) {
 }
 
 func main() {
+	reexec := os.Getenv("LUTRAINIT_REEXECING")
+	MainConfig.StartedReexec = reexec == "true"
+
+	if MainConfig.StartedReexec {
+		fmt.Println("Re-exec-ing of lutrainit in progress")
+	}
+
 	err := setupLogging(false); if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
@@ -97,50 +109,54 @@ func main() {
 	}
 	clog.Info("[lutra] Current $PATH is: %s", os.Getenv("PATH"))
 
-	// Remount root as rw.
-	//
-	// This should be handled by mount -a according to mount(8), since the flags that
-	// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
-	// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
-	clog.Info("[lutra] Remounting root filesystem")
-	Remount("/")
+	if !MainConfig.StartedReexec {
+		// Remount root as rw.
+		//
+		// This should be handled by mount -a according to mount(8), since the flags that
+		// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
+		// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
+		clog.Info("[lutra] Remounting root filesystem")
+		Remount("/")
+	}
 
 	// Start socket in background
 	go socketInitctl()
 
-	// Mount local filesytems
-	clog.Info("[lutra] Mounting local file systems")
-	MountAllExcept(NetFs)
+	if !MainConfig.StartedReexec {
+		// Mount local filesytems
+		clog.Info("[lutra] Mounting local file systems")
+		MountAllExcept(NetFs)
 
-	// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
-	run("swapon", "-a")
+		// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
+		run("swapon", "-a")
 
-	// Set the hostname for getty to be happy.
-	if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
-		SetHostname(hostname)
-	} else {
-		clog.Error(2, "[lutra] Error setting hostname: %s", err.Error())
+		// Set the hostname for getty to be happy.
+		if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
+			SetHostname(hostname)
+		} else {
+			clog.Error(2, "[lutra] Error setting hostname: %s", err.Error())
+		}
+
+		// There's a little (dare I say, a lot?) of black magic that seems to
+		// happen on a modern Linux systems for filesystems.
+		//
+		// Time was, everything would go into /etc/fstab.
+		//
+		// If you read "Demystifying the init system" (https://felipec.wordpress.com/2013/11/04/init/)
+		// he manually mounts /proc, /sys, /run, etc.
+		//
+		// When I do that on my Debian system, I get an "already mounted" error
+		// despite it not being in /etc/fstab, so I don't mount them here (either
+		// the kernel is doing it, or Debian is lying about init being the first
+		// process.)
+		//
+		// However, /dev/shm is neither automounted, nor in fstab, and without it
+		// Chromium won't start, so it's done manually here.
+		//
+		// (It should probably just go into my fstab to be honest, but then it seems
+		// that I'd need to manually add it every time I install a new system..)
+		Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 	}
-
-	// There's a little (dare I say, a lot?) of black magic that seems to
-	// happen on a modern Linux systems for filesystems.
-	//
-	// Time was, everything would go into /etc/fstab.
-	//
-	// If you read "Demystifying the init system" (https://felipec.wordpress.com/2013/11/04/init/)
-	// he manually mounts /proc, /sys, /run, etc.
-	//
-	// When I do that on my Debian system, I get an "already mounted" error
-	// despite it not being in /etc/fstab, so I don't mount them here (either
-	// the kernel is doing it, or Debian is lying about init being the first
-	// process.)
-	//
-	// However, /dev/shm is neither automounted, nor in fstab, and without it
-	// Chromium won't start, so it's done manually here.
-	//
-	// (It should probably just go into my fstab to be honest, but then it seems
-	// that I'd need to manually add it every time I install a new system..)
-	Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 
 	// Parse Main configuration
 	if err = ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
@@ -157,16 +173,21 @@ func main() {
 	if err := setupLogging(true); err != nil {
 		clog.Error(2, "Failed to add file logging to logger: %s", err.Error())
 	}
-	// Start all services from StartupServices in the right Needs/Provide order
-	StartServices()
+
+	if !MainConfig.StartedReexec {
+		// Start all services from StartupServices in the right Needs/Provide order
+		StartServices()
+	}
 
 	// Kick Zombies out in the background
 	go reapChildren()
 
-	Gettys(MainConfig.Autologins, MainConfig.Persist)
+	if !MainConfig.StartedReexec {
+		Gettys(MainConfig.Autologins, MainConfig.Persist)
 
-	// The tty exited. Kill processes, unmount filesystems and halt the system.
-	doShutdown(false)
+		// The tty exited. Kill processes, unmount filesystems and halt the system.
+		doShutdown(false)
+	}
 }
 
 func thePidOne() bool {
@@ -205,4 +226,25 @@ func setupLogging(withFile bool) (err error) {
 		}
 	}
 	return err
+}
+
+func ReExecInit() {
+	fmt.Println("reexecing...")
+
+	// Stop GoRPC
+	GoRpcServer.Stop()
+
+	// Remove file logger
+	setupLogging(false)
+
+	// Serialize the LoadedServices struct
+
+	// Prepare new environment
+	os.Setenv("LUTRAINIT_REEXECING", "true")
+
+	if err := syscall.Exec(os.Args[0], os.Args, os.Environ()); err != nil {
+		fmt.Println("reexec failed:", err)
+		// What to do ?
+		// Exit ? Continue ? Panic ?
+	}
 }

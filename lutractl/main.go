@@ -43,6 +43,7 @@ func main() {
 		CmdStart,
 		CmdStop,
 		CmdRestart,
+		CmdReexec,
 	}
 	app.Flags = append(app.Flags, []cli.Flag{}...)
 

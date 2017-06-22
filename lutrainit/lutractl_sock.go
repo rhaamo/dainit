@@ -86,14 +86,19 @@ func socketInitctl() {
 		return answer
 	})
 
-	s := gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
-	clog.Info("[lutra] RPC starting on socket: %s", s.Addr)
+	d.AddFunc("reexec", func() {
+		go ReExecInit()
+		return
+	})
 
-	if err := s.Serve(); err != nil {
+	GoRpcServer = gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
+	clog.Info("[lutra] RPC starting on socket: %s", GoRpcServer.Addr)
+
+	if err := GoRpcServer.Serve(); err != nil {
 		clog.Error(2, "[lutra][socket] Starting GoRPC error", err.Error())
 		return
 	}
-	defer s.Stop()
+	defer GoRpcServer.Stop()
 }
 
 func returnStats() *ipc.SysStatus {

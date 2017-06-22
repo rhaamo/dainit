@@ -28,6 +28,8 @@ var (
 			MaxDays  	int64
 			BufferLen	int64
 		}
+
+		StartedReexec	bool
 	}
 )
 
