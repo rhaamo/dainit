@@ -34,6 +34,8 @@ var (
 
 	GoRpcServer = &gorpc.Server{}
 
+	ShuttingDown = false
+
 	// Theses two last should only filled by LDFLAGS, see Makefile
 
 	// LutraBuildTime is the time of the build
@@ -174,12 +176,10 @@ func main() {
 	// Kick Zombies out in the background
 	go reapChildren()
 
-	if !MainConfig.StartedReexec {
-		Gettys(MainConfig.Autologins, MainConfig.Persist)
+	ManageGettys()
 
-		// The tty exited. Kill processes, unmount filesystems and halt the system.
-		doShutdown(false)
-	}
+	// The ttys exited. Kill processes, unmount filesystems and halt the system.
+	doShutdown(false)
 }
 
 func thePidOne() bool {

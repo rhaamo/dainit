@@ -117,6 +117,8 @@ func getAllProcesses() ([]*os.Process, error) {
 
 
 func doShutdown(reboot bool) {
+	ShuttingDown = true
+
 	clog.Info("Shutdown or reboot initiated, please wait...")
 	// TODO: Run shutdown scripts for services that are started instead
 	// of just sending them a SIGTERM right off the bat..
