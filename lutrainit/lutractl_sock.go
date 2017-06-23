@@ -49,7 +49,7 @@ func socketInitctl() {
 	})
 
 	d.AddFunc("reload", func() *ipc.AnswerReload {
-		err := ReloadConfig()
+		err := ReloadConfig(true, true)
 		if err != nil {
 			return &ipc.AnswerReload{Err: true, ErrStr: err.Error()}
 		}

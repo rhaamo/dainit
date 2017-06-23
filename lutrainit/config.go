@@ -230,15 +230,15 @@ func ParseSetupConfig(fname string) (err error) {
 }
 
 // ReloadConfig both Main and Services ones
-func ReloadConfig() (err error) {
-	clog.Info("Reloading configurations...")
+func ReloadConfig(reloading bool, withFile bool) (err error) {
+	clog.Info("Parsing configurations...")
 	if err := ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
 		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
 		return err
 	}
-	clog.Info("Main config reloaded.")
+	clog.Info("Main config parsed.")
 
-	if err = setupLogging(true); err != nil {
+	if err = setupLogging(withFile); err != nil {
 		clog.Error(2, "[lutra] Failed to re-setup logging: %s", err.Error())
 		return err
 	}
@@ -250,7 +250,7 @@ func ReloadConfig() (err error) {
 	}
 
 	// Then re-parse
-	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", true)
+	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", reloading)
 	if err != nil {
 		clog.Error(2, "[lutra] Cannot re-parse service configs: %s", err.Error())
 		return err
@@ -265,7 +265,7 @@ func ReloadConfig() (err error) {
 	if dissappeared > 0 {
 		clog.Info("[lutra] It looks like %d Services files dissappeared :|", dissappeared)
 	}
-	clog.Info("Services reloaded.")
+	clog.Info("Services re-parsed.")
 
 	return err
 }

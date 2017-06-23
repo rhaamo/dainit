@@ -158,16 +158,8 @@ func main() {
 		Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 	}
 
-	// Parse Main configuration
-	if err = ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
-		clog.Warn("[lutra] Cannot parse configuration file: %s", err.Error())
-	}
-
-	// Parse all the configs in /etc/dainit. Finally!
-	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", false)
-	if err != nil {
-		clog.Error(2, "[lutra] Cannot parse service configs: %s", err.Error())
-	}
+	// Parse configurations
+	ReloadConfig(false, false)
 
 	// We finally have a filesystem mounted and the configuration is parsed
 	if err := setupLogging(true); err != nil {
