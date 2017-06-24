@@ -31,16 +31,18 @@ func socketInitctl() {
 		return returnStats()
 	})
 
+	// non-blocking
 	d.AddFunc("shutdown", func() {
 		clog.Info("[lutra] I was asked to shutdown, goodbye!")
-		doShutdown(false)
-		// will never return, sorry
+		go doShutdown(false)
+		return
 	})
 
+	// non-blockin
 	d.AddFunc("reboot", func() {
 		clog.Info("[lutra] I was asked to reboot, seeya!")
-		doShutdown(true)
-		// will never return, sorry
+		go doShutdown(true)
+		return
 	})
 
 	// Returns processes statuses
@@ -86,6 +88,7 @@ func socketInitctl() {
 		return answer
 	})
 
+	// non-blockin
 	d.AddFunc("reexec", func() {
 		go ReExecInit()
 		return
