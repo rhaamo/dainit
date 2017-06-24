@@ -35,6 +35,8 @@ var (
 
 	// GoRPCServer for client
 	GoRPCServer = &gorpc.Server{}
+	// GoRPCStarted or not
+	GoRPCStarted = false
 
 	//ShuttingDown is used to break various check loops like in getty
 	ShuttingDown bool
@@ -322,7 +324,10 @@ func ReExecInit() {
 	fmt.Println("reexecing...")
 
 	// Stop GoRPC
-	GoRPCServer.Stop()
+	if GoRPCStarted {
+		GoRPCServer.Stop()
+		GoRPCStarted = false
+	}
 
 	// Remove file logger
 	setupLogging(false)
