@@ -107,7 +107,7 @@ Provides: otherstuff
 Provides: otherstuff2
 Shutdown: bar
 Startup: foo
-Type: simple
+Type: forking
 `,
 				Service{
 					Name:     "TestService",
@@ -115,7 +115,7 @@ Type: simple
 					Shutdown: "bar",
 					Needs:    []ServiceType{"stuff"},
 					Provides: []ServiceType{"otherstuff", "otherstuff2"},
-					Type:	  "simple",
+					Type:	  "forking",
 				},
 			},
 		}
@@ -147,7 +147,7 @@ Shutdown: bar
 					Shutdown: "bar",
 					Needs:    []ServiceType{"stuff"},
 					Provides: []ServiceType{"otherstuff is also", "otherstuff2"},
-					Type:     "simple",
+					Type:     "forking",
 				},
 			},
 		}
