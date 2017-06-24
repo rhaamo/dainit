@@ -1,17 +1,14 @@
 # lutrainit
 
-lutrainit is a simple init system for Linux written in Go.
-
-It's likely less full-featured and more minimalist than your init system. (It aims to be an init system and only an init system.)
+lutrainit is an init system for Linux written in Go.
 
 lutrainit will do the following:
 
 1. Set the hostname
 2. Remount the root filesystem[1]
 3. Mount all other non-network filesystems and activate swap partitions
-3. Start processes with config files in /etc/dainit after their dependencies
-   ("Needs") are started. See `conf/` for a sample udevd and wpa_supplicant (which
-   depends on udevd to finish before being started) config.
+3. Start processes with config files in /etc/lutrainit/lutra.d/ after their dependencies
+   ("Needs") are started. See `conf/` for a samples config.
 4. Start some TTY or anything other user-specified.
 5. Kill running processes, unmount filesystems, and poweroff the system once that last
    login session ends.
@@ -21,10 +18,10 @@ many slow startup processes.)
 
 You can also create a file `/etc/lutrainit/lutra.conf` for some basic configuration.
 
-If there are any lines of the form `Autologin: username` it will automatically log in
+If there are any lines of the form `autologin: username` it will automatically log in
 as that username. (If there's multiple autologin directives, it will create the
 appropriate number of ttys.)
-If any line contains `Persist: true`, then when a tty exits, it'll respawn the tty instead of powering down the system once all the ttys are gone.
+If any line contains `persist: true`, then when a tty exits, it'll respawn the tty instead of powering down the system once all the ttys are gone.
 
 See the `conf/` folder for what you can put in `/etc/lutrainit/` including services files in `/etc/lutrainit/lutra.d/`.
 

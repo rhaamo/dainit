@@ -1,12 +1,3 @@
-# /etc/lutrainit/lutra.conf
-
-    # Should lutrainit persist after last tty exit ?
-    Persist: true/false
-    
-    # Adds as many as you want of Autologin, any line will create a TTY with specified user auto-logged
-    Autologin: foo
-    Autologin: root
-    
 # /etc/lutrainit/lutra.d/
 ## foo.service
 
@@ -41,12 +32,17 @@
   Separate multiples keywords with `,`. Only a-Z0-9 - and _ allowed
 - Startup: One line command to start service
 - Shutdown: One line command to stop service
+- CheckAlive: One line command to check if service is alive, however it use PIDFile
 - PIDFile: Where does the forking service sore his PID ?
+- Autostart: true/false, will the service started on boot ?
 - Type:
-  - simple: service doesn't expect to fork by himself
   - forking: service is expected to fork by himself, PIDFile: filled would be great
   - oneshot: expected to fork by himself, no stop/status possible, it's a one-shot thing
   
 Provides are mandatory, you can just put here the Name of the service.
 
 Needs are used for relationship, like udev can only be started when loopback have been brought up.
+
+## Default values
+- Autostart: true
+- Type: forking

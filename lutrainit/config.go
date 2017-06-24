@@ -214,7 +214,7 @@ func ParseSetupConfig(fname string) (err error) {
 	Cfg.NameMapper = ini.TitleUnderscore
 
 	sec := Cfg.Section("global")
-	MainConfig.Persist = sec.Key("Persist").MustBool(false)
+	MainConfig.Persist = sec.Key("Persist").MustBool(true)
 	MainConfig.Autologins = sec.Key("Autologin").Strings(",")
 
 	sec = Cfg.Section("logging")
