@@ -66,10 +66,6 @@ func parseLine(line string, s *Service) error {
 		if s.PIDFile == "" {
 			s.PIDFile = strings.TrimSpace(strings.TrimPrefix(line, "PIDFile:"))
 		}
-	} else if strings.HasPrefix(line, "CheckAlive:") {
-		if s.CheckAlive == "" {
-			s.CheckAlive = Command(strings.TrimSpace(strings.TrimPrefix(line, "CheckAlive:")))
-		}
 	} else if strings.HasPrefix(line, "Type:") {
 		if s.Type == "" {
 			serviceType := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
@@ -202,7 +198,6 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			LoadedServices[s.Name].PIDFile = s.PIDFile
 			LoadedServices[s.Name].Startup = s.Startup
 			LoadedServices[s.Name].Shutdown = s.Shutdown
-			LoadedServices[s.Name].CheckAlive = s.CheckAlive
 			LoadedServices[s.Name].Type = s.Type
 		}
 

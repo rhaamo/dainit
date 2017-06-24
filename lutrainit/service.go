@@ -135,7 +135,6 @@ type Service struct {
 
 	Startup  	Command
 	Shutdown 	Command
-	CheckAlive  Command
 
 	ExecPreStart	Command
 	ExecPreStop		Command
@@ -410,15 +409,6 @@ func checkIfProcessAlive(s *Service) (alive bool, pid int, err error) {
 		return running, pid, nil
 	}
 
-	// Check using CheckAlive
-	if s.CheckAlive != "" {
-		running, err := processAliveByCmd(s.CheckAlive.String())
-		if err != nil {
-			return false, 0, err
-		}
-		return running, 0, nil
-	}
-
 	// TODO: some sort of 'pgrep blah' fork forking types
 
 	// Else if it's a simple, check status from list
@@ -432,15 +422,17 @@ func checkIfProcessAlive(s *Service) (alive bool, pid int, err error) {
 
 // CheckAndStartService will check if process alive and start
 func CheckAndStartService(s *Service) (err error) {
-	alive, pid, err := checkIfProcessAlive(s)
-	if err != nil {
-		return err
-	}
+	if s.Type != "oneshot" {
+		alive, pid, err := checkIfProcessAlive(s)
+		if err != nil {
+			return err
+		}
 
-	if alive && pid != 0 {
-		return fmt.Errorf("process %s already running as PID %d", s.Name, pid)
-	} else if alive {
-		return fmt.Errorf("process %s already running", s.Name)
+		if alive && pid != 0 {
+			return fmt.Errorf("process %s already running as PID %d", s.Name, pid)
+		} else if alive {
+			return fmt.Errorf("process %s already running", s.Name)
+		}
 	}
 
 	// start service
