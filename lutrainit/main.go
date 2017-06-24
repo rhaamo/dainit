@@ -37,7 +37,7 @@ var (
 	GoRPCServer = &gorpc.Server{}
 
 	//ShuttingDown is used to break various check loops like in getty
-	ShuttingDown = false
+	ShuttingDown bool
 
 	lsFnameSerialized = "/run/lutrainit.reexec.ls.bin"
 	glFnameSerialized = "/run/lutrainit.reexec.gl.bin"
