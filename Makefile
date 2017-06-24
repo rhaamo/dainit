@@ -13,7 +13,7 @@ all: build
 check: test
 
 govet:
-	$(GOVET) main.go
+	$(GOVET) */*.go
 
 init:
 	@echo "Building init"
@@ -27,19 +27,22 @@ ctl:
 build: init ctl
 
 build-dev: govet
-	go build -o lutrainit -v -tags '$(TAGS)' $(go list ./... | grep -v /vendor/)
+	go build -o lutrainit -v -tags '$(TAGS)' $$(go list ./... | grep -v /vendor/)
 
 build-dev-race: govet
-	go build -o lutrainit -v -race -tags '$(TAGS)' $(go list ./... | grep -v /vendor/)
+	go build -o lutrainit -v -race -tags '$(TAGS)' $$(go list ./... | grep -v /vendor/)
 
 clean:
 	find . -name ".DS_Store" -delete
 	go clean -i ./...
 
 test-init:
-	cd lutrainit && go test -cover -race $(go list ./... | grep -v /vendor/)
+	cd lutrainit && go test -cover -race $$(go list ./... | grep -v /vendor/)
 
 test-ctl:
-	cd lutractl && go test -cover -race $(go list ./... | grep -v /vendor/)
+	cd lutractl && go test -cover -race $$(go list ./... | grep -v /vendor/)
 
 test: test-init test-ctl
+
+lint:
+	golint $$(go list ./... | grep -v /vendor/)
