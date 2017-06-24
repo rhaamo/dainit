@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"fmt"
 	"github.com/valyala/gorpc"
+	"encoding/gob"
+	"bytes"
 )
 
 var (
@@ -35,6 +37,9 @@ var (
 	GoRpcServer = &gorpc.Server{}
 
 	ShuttingDown = false
+
+	lsFnameSerialized = "/run/lutrainit.reexec.ls.bin"
+	glFnameSerialized = "/run/lutrainit.reexec.gl.bin"
 
 	// Theses two last should only filled by LDFLAGS, see Makefile
 
@@ -81,15 +86,19 @@ func main() {
 	reexec := os.Getenv("LUTRAINIT_REEXECING")
 	MainConfig.StartedReexec = reexec == "true"
 
-	if MainConfig.StartedReexec {
-		fmt.Println("Re-exec-ing of lutrainit in progress")
-	}
-
 	err := setupLogging(false); if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
 		// PANIC PANIC PANIC
 		os.Exit(-1)
+	}
+
+	if MainConfig.StartedReexec {
+		fmt.Println("Re-exec-ing of lutrainit in progress")
+		err := gobelinFromFile()
+		if err != nil {
+			println("error deserializing structs from files. expect misbehaviors or panics.")
+		}
 	}
 
 	// First of first, who are we ?
@@ -220,6 +229,93 @@ func setupLogging(withFile bool) (err error) {
 	return err
 }
 
+func gobelinToFile() (err error) {
+	bls := new(bytes.Buffer)
+	bgl := new(bytes.Buffer)
+
+	ls := gob.NewEncoder(bls)
+	gl := gob.NewEncoder(bgl)
+
+	err = ls.Encode(LoadedServices)
+	if err != nil {
+		clog.Error(2, "error encoding LoadedServices: %s", err.Error())
+		return err
+	}
+
+	err = gl.Encode(GettysList)
+	if err != nil {
+		clog.Error(2, "error encoding GettysList: %s", err.Error())
+		return err
+	}
+
+	err = ioutil.WriteFile(lsFnameSerialized, bls.Bytes(), 0644)
+	if err != nil {
+		clog.Error(2, "error saving serialized file %s: %s", lsFnameSerialized, err.Error())
+		return err
+	}
+
+	err = ioutil.WriteFile(glFnameSerialized, bgl.Bytes(), 0644)
+	if err != nil {
+		clog.Error(2, "error saving serialized file %s: %s", glFnameSerialized, err.Error())
+		return err
+	}
+
+	clog.Info("LoadedServices and GettysList have been serialized to file")
+	return nil
+}
+
+func gobelinFromFile() (err error) {
+	lsBytes, err := ioutil.ReadFile(lsFnameSerialized)
+	if err != nil {
+		clog.Error(2, "error loading serialized file %s: %s", lsFnameSerialized, err.Error())
+		return err
+	}
+
+	glBytes, err := ioutil.ReadFile(glFnameSerialized)
+	if err != nil {
+		clog.Error(2, "error loading serialized file %s: %s", glFnameSerialized, err.Error())
+		return err
+	}
+
+	ls := gob.NewDecoder(bytes.NewReader(lsBytes))
+	if err != nil {
+		clog.Error(2, "error decoding LoadedServices: %s", err.Error())
+		return err
+	}
+
+	err = ls.Decode(&LoadedServices)
+	if err != nil {
+		clog.Error(2, "error mapping decoded LoadedServices: %s", err.Error())
+		return err
+	}
+
+	gl := gob.NewDecoder(bytes.NewReader(glBytes))
+	if err != nil {
+		clog.Error(2, "error decoding GettysList: %s", err.Error())
+		return err
+	}
+
+	err = gl.Decode(&GettysList)
+	if err != nil {
+		clog.Error(2, "error mapping decoded GettysList: %s", err.Error())
+		return err
+	}
+
+	// Remove old serializing files
+	if err = os.Remove(lsFnameSerialized); err != nil {
+		clog.Error(2, "error removing file %s: %s", lsFnameSerialized, err.Error())
+		return err
+	}
+	if err = os.Remove(glFnameSerialized); err != nil {
+		clog.Error(2, "error removing file %s: %s", glFnameSerialized, err.Error())
+		return err
+	}
+
+	clog.Info("LoadedServices and GettysList have been de-serialized from file")
+
+	return nil
+}
+
 func ReExecInit() {
 	fmt.Println("reexecing...")
 
@@ -230,6 +326,10 @@ func ReExecInit() {
 	setupLogging(false)
 
 	// Serialize the LoadedServices struct
+	err := gobelinToFile()
+	if err != nil {
+		clog.Error(2, "error serializing structures. expect misbehaviors or panics.")
+	}
 
 	// Prepare new environment
 	os.Setenv("LUTRAINIT_REEXECING", "true")
