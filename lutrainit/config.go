@@ -227,6 +227,10 @@ func checkSanity(service *Service, filename string) error {
 		}
 	}
 
+	if service.Type == "forking" && service.PIDFile == "" {
+		clog.Warn("service %s is type forking without PIDFile, consider setting it")
+	}
+
 	return nil
 }
 

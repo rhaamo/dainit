@@ -33,11 +33,12 @@
 - Startup: One line command to start service
 - Shutdown: One line command to stop service
 - CheckAlive: One line command to check if service is alive, however it use PIDFile
-- PIDFile: Where does the forking service sore his PID ?
+- PIDFile: File the daemon store his PID. Should be mandatory for Type: forking
 - Autostart: true/false, will the service started on boot ?
 - Type:
-  - forking: service is expected to fork by himself, PIDFile: filled would be great
+  - forking: service is expected to fork by himself, PIDFile: would be great
   - oneshot: expected to fork by himself, no stop/status possible, it's a one-shot thing
+  - simple: daemon doesn't fork by himself
   
 Provides are mandatory, you can just put here the Name of the service.
 
