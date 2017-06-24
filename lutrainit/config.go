@@ -88,6 +88,22 @@ func parseLine(line string, s *Service) error {
 		}
 	} else if strings.HasPrefix(line, "Autostart:") {
 		s.AutoStart = strings.TrimSpace(strings.TrimPrefix(line, "Autostart:")) == "true"
+	} else if strings.HasPrefix(line, "ExecPreStart:") {
+		if s.ExecPreStart == "" {
+			s.ExecPreStart = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPreStart:")))
+		}
+	} else if strings.HasPrefix(line, "ExecPreStop:") {
+		if s.ExecPreStop == "" {
+			s.ExecPreStop = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPreStop:")))
+		}
+	} else if strings.HasPrefix(line, "ExecPostStart:") {
+		if s.ExecPostStart == "" {
+			s.ExecPostStart = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPostStart:")))
+		}
+	} else if strings.HasPrefix(line, "ExecPostStop:") {
+		if s.ExecPostStop == "" {
+			s.ExecPostStop = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPostStop:")))
+		}
 	}
 	return nil
 }

@@ -124,6 +124,11 @@ type Service struct {
 	Shutdown 	Command
 	CheckAlive  Command
 
+	ExecPreStart	Command
+	ExecPreStop		Command
+	ExecPostStart	Command
+	ExecPostStop	Command
+
 	Deleted			bool
 }
 
