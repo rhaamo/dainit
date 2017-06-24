@@ -74,8 +74,12 @@ type LastAction uint8
 // Last actions constants
 const (
 	Unknown = LastAction(iota)
+	PreStart
 	Start
+	PostStart
+	PreStop
 	Stop
+	PostStop
 	Reload
 	Restart
 	Forcekill
@@ -85,10 +89,18 @@ func (la LastAction) String() string {
 	switch la {
 	case Unknown:
 		return "unknown"
+	case PreStart:
+		return "pre start"
 	case Start:
 		return "start"
+	case PostStart:
+		return "post start"
+	case PreStop:
+		return "pre stop"
 	case Stop:
 		return "stop"
+	case PostStop:
+		return "post stop"
 	case Reload:
 		return "reload"
 	case Restart:

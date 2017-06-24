@@ -60,8 +60,12 @@ type LastAction uint8
 // Last actions constants
 const (
 	Unknown = LastAction(iota)
+	PreStart
 	Start
+	PostStart
+	PreStop
 	Stop
+	PostStop
 	Reload
 	Restart
 	Forcekill
@@ -71,10 +75,18 @@ func (la LastAction) String() string {
 	switch la {
 	case Unknown:
 		return "unknown"
+	case PreStart:
+		return "pre start"
 	case Start:
 		return "start"
+	case PostStart:
+		return "post start"
+	case PreStop:
+		return "pre stop"
 	case Stop:
 		return "stop"
+	case PostStop:
+		return "post stop"
 	case Reload:
 		return "reload"
 	case Restart:
@@ -164,7 +176,6 @@ func StartServices() {
 						// What are you doing here ?
 						clog.Warn("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
 					}
-
 				}
 
 				startedMu.Lock()
@@ -188,6 +199,17 @@ func(s Service) Start() error {
 	LoadedServices[s.Name].State = Starting
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[s.Name].LastAction = Start
+
+	if s.ExecPreStart != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PreStart
+
+		err := justExecACommand(s.ExecPreStart.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPreStart: %s", s.Name, err.Error())
+			return err
+		}
+	}
 
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
@@ -215,6 +237,18 @@ func(s Service) Start() error {
 
 		return err
 	}
+
+	if s.ExecPostStart != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PostStart
+
+		err := justExecACommand(s.ExecPostStart.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPostStart: %s", s.Name, err.Error())
+			return err
+		}
+	}
+
 	s.State = Started
 	LoadedServices[s.Name].State = Started
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
@@ -232,6 +266,17 @@ func(s Service) StartSimple() {
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[s.Name].LastAction = Start
 	LoadedServices[s.Name].LastKnownPID = 0
+
+	if s.ExecPreStart != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PreStart
+
+		err := justExecACommand(s.ExecPreStart.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPreStart: %s", s.Name, err.Error())
+			return
+		}
+	}
 
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
@@ -264,6 +309,18 @@ func(s Service) StartSimple() {
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = Stop
 	}
+
+	if s.ExecPostStart != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PostStart
+
+		err := justExecACommand(s.ExecPostStart.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPostStart: %s", s.Name, err.Error())
+			return
+		}
+	}
+
 }
 
 // NeedsSatisfied if all of s's needs are satified by the passed list of provided types
@@ -320,8 +377,8 @@ func processAliveByCmd(command string) (alive bool, err error) {
 	return true, nil
 }
 
-// ExecShutdown of the specified service
-func ExecShutdown(command string) (err error) {
+// justExecACommand of the specified service
+func justExecACommand(command string) (err error) {
 	cmd := exec.Command("sh", "-c", command)
 
 	if err = cmd.Run(); err != nil {
@@ -396,6 +453,37 @@ func CheckAndStartService(s *Service) (err error) {
 	return nil
 }
 
+// We manage the "cmd" by CheckAndStopService, no simple/forking logic here
+func shutdownProcess(s *Service, cmd string) (err error) {
+	if s.ExecPreStop != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PreStop
+
+		err = justExecACommand(s.ExecPreStop.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPreStop: %s", s.Name, err.Error())
+			return err
+		}
+	}
+
+	err = justExecACommand(cmd)
+	if err != nil {
+		return err
+	}
+
+	if s.ExecPostStop != "" {
+		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
+		LoadedServices[s.Name].LastAction = PostStop
+
+		err = justExecACommand(s.ExecPostStop.String())
+		if err != nil {
+			clog.Error(2, "error in %s ExecPostStop: %s", s.Name, err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
 // CheckAndStopService will check if process running and stop
 func CheckAndStopService(s *Service) (err error) {
 	// Well, we don't really care if process is running, yeah ?
@@ -407,9 +495,9 @@ func CheckAndStopService(s *Service) (err error) {
 		if s.State == Starting || s.State == Started {
 			// kill process according to cmd Shutdown
 			if s.Shutdown != "" {
-				err = ExecShutdown(s.Shutdown.String())
+				err = shutdownProcess(s, s.Shutdown.String())
 			} else {
-				err = ExecShutdown(fmt.Sprintf("pkill %d", s.LastKnownPID))
+				err = shutdownProcess(s, fmt.Sprintf("pkill %d", s.LastKnownPID))
 			}
 			if err != nil {
 				LoadedServices[s.Name].State = Errored
@@ -423,7 +511,7 @@ func CheckAndStopService(s *Service) (err error) {
 	}
 
 	if s.Shutdown != "" {
-		err = ExecShutdown(s.Shutdown.String())
+		err = shutdownProcess(s, s.Shutdown.String())
 	} else {
 		err = fmt.Errorf("no Shutdown: command defined for %s, I don't know how to kill it", s.Name)
 	}
