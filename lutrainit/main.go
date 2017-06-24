@@ -1,7 +1,3 @@
-// dainit is a simple init system for Linux intended for non-server uses
-// (ie. for a programmer's home Linux system.)
-//
-// It aims to be easy to use.
 package main
 
 import (
