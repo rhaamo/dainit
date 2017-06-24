@@ -196,8 +196,12 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			LoadedServices[s.Name].Provides = s.Provides
 			LoadedServices[s.Name].AutoStart = s.AutoStart
 			LoadedServices[s.Name].PIDFile = s.PIDFile
+			LoadedServices[s.Name].ExecPreStart = s.ExecPreStart
 			LoadedServices[s.Name].Startup = s.Startup
+			LoadedServices[s.Name].ExecPostStart = s.ExecPostStart
+			LoadedServices[s.Name].ExecPreStop = s.ExecPreStop
 			LoadedServices[s.Name].Shutdown = s.Shutdown
+			LoadedServices[s.Name].ExecPostStop = s.ExecPostStop
 			LoadedServices[s.Name].Type = s.Type
 		}
 
