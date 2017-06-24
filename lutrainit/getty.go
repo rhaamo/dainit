@@ -6,6 +6,7 @@ import (
 	"sync"
 	"syscall"
 	"github.com/go-clog/clog"
+	"github.com/mitchellh/go-ps"
 )
 
 var (
@@ -25,10 +26,57 @@ type FollowGetty struct {
 
 func ManageGettys() {
 	if MainConfig.StartedReexec {
+		// Defaulting gettys as unmanaged
+		for i := range GettysList {
+			GettysList[i].Managed = false
+		}
 
+		waitAndSpawnGettys()
 	} else {
 		manageAndSpawnGettys()
 	}
+}
+
+// We are watching unmanaged gettys and spawn one if persistency
+func aliveOrSpawn(getty *FollowGetty) {
+	for {
+		_, err := ps.FindProcess(getty.PID)
+		if err != nil {
+			clog.Error(2, "can't get running process for pid %d of unmanaged getty %s", getty.PID, getty.TTY)
+			// since getty exited, we are now managing it
+			getty.Managed = true
+			return
+		}
+		// getty still running
+	}
+}
+
+func waitAndSpawnGettys() {
+	wg := sync.WaitGroup{}
+
+	wg.Add(len(GettysList))
+	for _, getty := range GettysList {
+		go func(followGetty *FollowGetty) {
+			defer wg.Done()
+			for {
+				if followGetty.Managed {
+					if err := spawnGetty(followGetty.Autologin, followGetty.TTY, followGetty); err != nil {
+						followGetty.PID = 0
+						clog.Error(2, err.Error())
+					}
+				} else {
+					aliveOrSpawn(followGetty)
+				}
+
+				// if no persistency or going shutdown, exit loop
+				if !MainConfig.Persist || ShuttingDown {
+					return
+				}
+
+			}
+		}(getty)
+	}
+	wg.Wait()
 }
 
 // Gettys spawn the number of ttys required for len(autologins) to login.
