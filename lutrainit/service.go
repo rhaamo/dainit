@@ -25,6 +25,7 @@ type ServiceName string
 // ServiceType provides or needs
 type ServiceType string
 
+// RunState define running state of service
 type RunState uint8
 
 // Types of valid runState
@@ -92,6 +93,7 @@ func (c Command) String() string {
 	return string(c)
 }
 
+// StartupService is a lightweight service used only for startup loop
 type StartupService struct {
 	Name		ServiceName
 	AutoStart	bool
@@ -366,6 +368,7 @@ func checkIfProcessAlive(s *Service) (alive bool, pid int, err error) {
 	return true, 0, fmt.Errorf("cannot determine process state")
 }
 
+// CheckAndStartService will check if process alive and start
 func CheckAndStartService(s *Service) (err error) {
 	alive, pid, err := checkIfProcessAlive(s)
 	if err != nil {
@@ -388,6 +391,7 @@ func CheckAndStartService(s *Service) (err error) {
 	return nil
 }
 
+// CheckAndStopService will check if process running and stop
 func CheckAndStopService(s *Service) (err error) {
 	// Well, we don't really care if process is running, yeah ?
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
@@ -411,17 +415,17 @@ func CheckAndStopService(s *Service) (err error) {
 		}
 		LoadedServices[s.Name].State = Stopped
 		return fmt.Errorf("process %s doesn't seems to be alive ?", s.Name)
+	}
+
+	if s.Shutdown != "" {
+		err = ExecShutdown(s.Shutdown.String())
 	} else {
-		if s.Shutdown != "" {
-			err = ExecShutdown(s.Shutdown.String())
-		} else {
-			err = fmt.Errorf("no Shutdown: command defined for %s, I don't know how to kill it", s.Name)
-		}
-		if err != nil {
-			LoadedServices[s.Name].State = Errored
-			return err
-		}
-		LoadedServices[s.Name].State = Stopped
+		err = fmt.Errorf("no Shutdown: command defined for %s, I don't know how to kill it", s.Name)
+	}
+	if err != nil {
+		LoadedServices[s.Name].State = Errored
 		return err
 	}
+	LoadedServices[s.Name].State = Stopped
+	return err
 }

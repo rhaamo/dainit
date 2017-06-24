@@ -17,6 +17,7 @@ var (
 	GettysList = make(map[int]*FollowGetty)
 )
 
+// FollowGetty struct with tracking infos
 type FollowGetty struct {
 	TTY			string
 	PID			int
@@ -24,6 +25,7 @@ type FollowGetty struct {
 	Autologin	string
 }
 
+// ManageGettys to deal with reexec
 func ManageGettys() {
 	if MainConfig.StartedReexec {
 		// Defaulting gettys as unmanaged

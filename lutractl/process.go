@@ -17,7 +17,7 @@ var CmdStart = cli.Command {
 	Flags: []cli.Flag{},
 }
 
-// CmdStart CLI object
+// CmdStop CLI object
 var CmdStop = cli.Command {
 	Name: "stop",
 	Usage: "Stop process",

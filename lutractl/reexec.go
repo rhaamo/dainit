@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// CmdReload CLI object
+// CmdReexec CLI object
 var CmdReexec = cli.Command {
 	Name: "reexec",
 	Usage: "Re-exec init daemon",

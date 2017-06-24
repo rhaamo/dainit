@@ -21,12 +21,11 @@ var (
 	// LutraVersion should match the one in lutractl/main.go
 	LutraVersion = "0.1"
 
-	// Should only be used for the FIRST startup
+	// StartupServices Should only be used for the FIRST startup
 	// StartupServices is the in-memory map list of processes started on a full-start boot
 	StartupServices = make(map[ServiceType][]*StartupService)
 
-	// Used for any other actions, start, stop, etc.
-	// LoadedServices is the list of services loaded, with last known state
+	// LoadedServices is used for any other actions, start, stop, etc.
 	LoadedServices = make(map[ServiceName]*Service)
 
 	// NetFs design the list of known network file systems to be avoided mounted at boot
@@ -34,8 +33,10 @@ var (
 	// VirtFs design the list of known virtual file systems to avoid unmounting at shutdown
 	VirtFs = []string{"proc", "sysfs", "tmpfs", "devtmpfs", "devpts"}
 
-	GoRpcServer = &gorpc.Server{}
+	// GoRPCServer for client
+	GoRPCServer = &gorpc.Server{}
 
+	//ShuttingDown is used to break various check loops like in getty
 	ShuttingDown = false
 
 	lsFnameSerialized = "/run/lutrainit.reexec.ls.bin"
@@ -316,11 +317,12 @@ func gobelinFromFile() (err error) {
 	return nil
 }
 
+// ReExecInit take care of stopping RPC server, removing file logger and serialization before execve()
 func ReExecInit() {
 	fmt.Println("reexecing...")
 
 	// Stop GoRPC
-	GoRpcServer.Stop()
+	GoRPCServer.Stop()
 
 	// Remove file logger
 	setupLogging(false)

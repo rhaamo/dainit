@@ -113,6 +113,7 @@ type ServiceName string
 // ServiceType provides or needs
 type ServiceType string
 
+// RunState is running state
 type RunState uint8
 
 // Types of valid runState
@@ -148,6 +149,7 @@ type ServiceAction struct {
 	Action		LastAction
 }
 
+// ServiceActionAnswer is a service action answer
 type ServiceActionAnswer struct {
 	Name		string
 	Action		LastAction

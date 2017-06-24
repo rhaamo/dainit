@@ -245,7 +245,7 @@ func ReloadConfig(reloading bool, withFile bool) (err error) {
 	clog.Info("Logging updated.")
 
 	// Mark all as deleted
-	for k, _ := range LoadedServices {
+	for k := range LoadedServices {
 		LoadedServices[k].Deleted = true
 	}
 
@@ -257,7 +257,7 @@ func ReloadConfig(reloading bool, withFile bool) (err error) {
 	}
 
 	dissappeared := 0
-	for k, _ := range LoadedServices {
+	for k := range LoadedServices {
 		if LoadedServices[k].Deleted {
 			dissappeared++
 		}
