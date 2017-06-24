@@ -82,7 +82,7 @@ node('linux && x86_64 && go') {
             sha256sum ${applicationName}.linux-${buildNumber}/lutrainit ${applicationName}.linux-${buildNumber}/lutractl > ${applicationName}.linux-${buildNumber}/sha256.txt
             cp -r conf ${applicationName}.linux-${buildNumber}
             cp LICENSE* ${applicationName}.linux-${buildNumber}
-            cp README.md SERVICE.md MAIN_CONFIG.md ${applicationName}.linux-${buildNumber}
+            cp README.md SERVICES.md MAIN_CONFIG.md ${applicationName}.linux-${buildNumber}
             cp lint.txt tests.txt ${applicationName}.linux-${buildNumber}
             zip -r ${applicationName}.linux-${buildNumber}.zip ${applicationName}.linux-${buildNumber}
             rm -rf ${applicationName}.linux-${buildNumber}
