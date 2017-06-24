@@ -116,9 +116,8 @@ type Service struct {
 	LastAction		LastAction
 	LastActionAt	int64		// Timestamp of the last action (UTC)
 	LastMessage		string
-	LastKnownPID	int
 
-	Type			string // forking or simple
+	Type			string // forking or oneshot
 	PIDFile			string
 
 	Startup  	Command
@@ -153,8 +152,6 @@ func StartServices() {
 						if err := s.Start(); err != nil {
 							clog.Error(2, err.Error())
 						}
-					} else if s.Type == "simple" {
-						go s.StartSimple()
 					} else {
 						// What are you doing here ?
 						clog.Warn("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
@@ -218,47 +215,6 @@ func(s Service) Start() error {
 	clog.Info("[lutra] Started service %s", s.Name)
 
 	return nil
-}
-
-// StartSimple and track the PID and process state (for simple service without auto-fork function)
-func(s Service) StartSimple() {
-	s.State = Starting
-	LoadedServices[s.Name].State = Starting
-	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
-	LoadedServices[s.Name].LastAction = Start
-	LoadedServices[s.Name].LastKnownPID = 0
-
-	cmd := exec.Command("sh", "-c", s.Startup.String())
-	cmd.Stderr = os.Stderr
-	if err := cmd.Start(); err != nil {
-		clog.Error(2,"[lutra] Service %s exited with error: %s", s.Name, err.Error())
-		s.State = Errored
-		LoadedServices[s.Name].State = Errored
-		LoadedServices[s.Name].LastMessage = err.Error()
-		LoadedServices[s.Name].LastKnownPID = 0
-		return
-	}
-	// Waiting for the command to finish
-	s.State = Started
-	LoadedServices[s.Name].State = Started
-	LoadedServices[s.Name].LastKnownPID = cmd.Process.Pid
-	clog.Info("[lutra] Started service %s", s.Name)
-
-	err := cmd.Wait()
-	if err != nil {
-		clog.Error(2, "[lutra] Service %s finished with error: %s", s.Name, err.Error())
-		s.State = Stopped
-		LoadedServices[s.Name].State = Stopped
-		LoadedServices[s.Name].LastMessage = err.Error()
-		LoadedServices[s.Name].LastKnownPID = 0
-	} else {
-		s.State = Stopped
-		clog.Info("[lutra] Service stopped:	 %s", s.Name)
-		LoadedServices[s.Name].State = Stopped
-		LoadedServices[s.Name].LastKnownPID = 0
-		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
-		LoadedServices[s.Name].LastAction = Stop
-	}
 }
 
 // NeedsSatisfied if all of s's needs are satified by the passed list of provided types
@@ -359,11 +315,6 @@ func checkIfProcessAlive(s *Service) (alive bool, pid int, err error) {
 
 	// TODO: some sort of 'pgrep blah' fork forking types
 
-	// Else if it's a simple, check status from list
-	if s.Type == "simple" {
-		return s.State == Started, 0, nil
-	}
-
 	// Cannot determine process state
 	return true, 0, fmt.Errorf("cannot determine process state")
 }
@@ -382,11 +333,7 @@ func CheckAndStartService(s *Service) (err error) {
 	}
 
 	// start service
-	if s.Type == "simple" {
-		go s.StartSimple()
-	} else {
-		s.Start()
-	}
+	s.Start()
 
 	return nil
 }
@@ -396,26 +343,6 @@ func CheckAndStopService(s *Service) (err error) {
 	// Well, we don't really care if process is running, yeah ?
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[s.Name].LastAction = Stop
-
-	// If simple check struct status
-	if s.Type == "simple" {
-		if s.State == Starting || s.State == Started {
-			// kill process according to cmd Shutdown
-			if s.Shutdown != "" {
-				err = ExecShutdown(s.Shutdown.String())
-			} else {
-				err = ExecShutdown(fmt.Sprintf("pkill %d", s.LastKnownPID))
-			}
-			if err != nil {
-				LoadedServices[s.Name].State = Errored
-				return err
-			}
-			LoadedServices[s.Name].State = Stopped
-			return err
-		}
-		LoadedServices[s.Name].State = Stopped
-		return fmt.Errorf("process %s doesn't seems to be alive ?", s.Name)
-	}
 
 	if s.Shutdown != "" {
 		err = ExecShutdown(s.Shutdown.String())

@@ -46,9 +46,6 @@ func getStatus(ctx *cli.Context) error {
 			fmt.Printf("WARNING: This service init have been deleted from configuration directory.\n")
 		}
 		fmt.Printf("Status: %s\n", loadedService.State.String())
-		if loadedService.Type == "simple" && loadedService.State == ipc.Started && loadedService.LastKnownPID >= 2{
-			fmt.Printf("Lask known PID: %d\n", loadedService.LastKnownPID)
-		}
 		lastActionAt := time.Unix(loadedService.LastActionAt, 0).Format(time.RFC1123Z)
 		fmt.Printf("Last action: %s at %s\n", loadedService.LastAction.String(), lastActionAt)
 		fmt.Printf("Last message: %s\n\n", loadedService.LastMessage)

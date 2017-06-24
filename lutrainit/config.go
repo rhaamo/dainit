@@ -75,14 +75,15 @@ func parseLine(line string, s *Service) error {
 			serviceType := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
 			switch serviceType {
 			case "simple":
-				s.Type = "simple"
+				clog.Warn("Service type simple isn't handled anymore, service deactivated")
+				return fmt.Errorf("service type simple not handled anymore")
 			case "forking":
 				s.Type = "forking"
 			case "oneshot":
 				s.Type = "oneshot"
 			default:
-				clog.Warn("[lutra] Invalid service type: %s, forcing Type=simple", serviceType)
-				s.Type = "simple"
+				clog.Warn("[lutra] Invalid service type: %s, forcing Type=forking", serviceType)
+				s.Type = "forking"
 			}
 		}
 	} else if strings.HasPrefix(line, "Autostart:") {
@@ -106,7 +107,8 @@ func ParseConfig(r io.Reader, filename string) (Service, error) {
 		switch err {
 		case io.EOF:
 			if err := parseLine(line, &s); err != nil {
-				clog.Error(2, err.Error())
+				clog.Error(2, "EOF: service %s cannot be parsed: %s", filename, err.Error())
+				return Service{}, err
 			}
 
 			// Check for configuration sanity before returning
@@ -117,7 +119,8 @@ func ParseConfig(r io.Reader, filename string) (Service, error) {
 			return s, nil
 		case nil:
 			if err := parseLine(line, &s); err != nil {
-				clog.Error(2, err.Error())
+				clog.Error(2, "<nil>: service %s cannot be parsed: %s", filename, err.Error())
+				return Service{}, err
 			}
 		default:
 			return Service{}, err
@@ -151,7 +154,7 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		s, err := ParseConfig(f, fstat.Name())
 		f.Close()
 		if err != nil {
-			clog.Error(2, err.Error())
+			clog.Error(2,"got error for service file %s, service will be deactivated: %s", fstat.Name(), err.Error())
 			continue
 		}
 
