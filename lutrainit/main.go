@@ -170,8 +170,8 @@ func main() {
 		Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
 	}
 
-	// Parse configurations
-	ReloadConfig(false, false)
+	// Parse configurations, reexec is counted as reloading
+	ReloadConfig(MainConfig.StartedReexec, false)
 
 	// We finally have a filesystem mounted and the configuration is parsed
 	if err := setupLogging(true); err != nil {

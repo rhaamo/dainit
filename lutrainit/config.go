@@ -172,12 +172,23 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 			s.State = NotStarted
 			s.LastAction = Unknown
 			s.LastActionAt = time.Now().UTC().Unix()
+
+			LoadedServices[s.Name] = &s
 		} else {
 			// We are reloading, AND, the init service is still present, mark it as not-deleted
-			s.Deleted = false
-		}
+			// And also not overwrite the whole service, just update what could have changed
 
-		LoadedServices[s.Name] = &s
+			LoadedServices[s.Name].Deleted = false
+			LoadedServices[s.Name].Description = s.Description
+			LoadedServices[s.Name].Needs = s.Needs
+			LoadedServices[s.Name].Provides = s.Provides
+			LoadedServices[s.Name].AutoStart = s.AutoStart
+			LoadedServices[s.Name].PIDFile = s.PIDFile
+			LoadedServices[s.Name].Startup = s.Startup
+			LoadedServices[s.Name].Shutdown = s.Shutdown
+			LoadedServices[s.Name].CheckAlive = s.CheckAlive
+			LoadedServices[s.Name].Type = s.Type
+		}
 
 	}
 	return nil
@@ -231,7 +242,12 @@ func ParseSetupConfig(fname string) (err error) {
 
 // ReloadConfig both Main and Services ones
 func ReloadConfig(reloading bool, withFile bool) (err error) {
-	clog.Info("Parsing configurations...")
+	if reloading {
+		clog.Info("Parsing configurations with reloading...")
+	} else {
+		clog.Info("Parsing configurations...")
+	}
+
 	if err := ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
 		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
 		return err
