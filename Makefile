@@ -46,3 +46,16 @@ test: test-init test-ctl
 
 lint:
 	golint $$(go list ./... | grep -v /vendor/)
+
+install:
+	install -m 0755 -p lutrainit/lutrainit /lutrainit
+	install -m 0755 -p lutractl/lutractl /usr/bin/lutractl
+
+install-sample-conf:
+	install -d -m 0755 /etc/lutrainit
+	install -d -m 0755 /etc/lutrainit.d
+	install -m 0755 -p conf/lutra.conf /etc/lutrainit/lutra.conf
+	install -m 0755 -p conf/lutra.d/loopback.service /etc/lutrainit/lutra.d/
+	install -m 0755 -p conf/lutra.d/network.eth0.service /etc/lutrainit/lutra.d/
+	install -m 0755 -p conf/lutra.d/udev.service /etc/lutrainit/lutra.d/
+	install -m 0755 -p conf/lutra.d/wpa_supplicant.service /etc/lutrainit/lutra.d/
