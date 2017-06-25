@@ -142,6 +142,7 @@ type Service struct {
 	ExecPostStop	Command
 
 	Deleted			bool
+	Filename		string
 }
 
 // StartServices starts all declared services at start
@@ -493,12 +494,15 @@ func CheckAndStopService(s *Service) (err error) {
 			}
 			if err != nil {
 				LoadedServices[s.Name].State = Errored
+				clog.Info("Service %s errored", s.Name)
 				return err
 			}
 			LoadedServices[s.Name].State = Stopped
+			clog.Info("Service %s stopped", s.Name)
 			return err
 		}
 		LoadedServices[s.Name].State = Stopped
+		clog.Info("Service %s isn't alive", s.Name)
 		return fmt.Errorf("process %s doesn't seems to be alive ?", s.Name)
 	}
 
@@ -509,8 +513,10 @@ func CheckAndStopService(s *Service) (err error) {
 	}
 	if err != nil {
 		LoadedServices[s.Name].State = Errored
+		clog.Info("Service %s errored", s.Name)
 		return err
 	}
 	LoadedServices[s.Name].State = Stopped
+	clog.Info("Service %s stopped", s.Name)
 	return err
 }

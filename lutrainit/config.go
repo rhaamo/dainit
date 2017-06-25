@@ -77,7 +77,7 @@ func parseLine(line string, s *Service) error {
 			case "oneshot":
 				s.Type = "oneshot"
 			default:
-				clog.Warn("[lutra] Invalid service type: %s, forcing Type=simple", serviceType)
+				clog.Warn("[lutra] Invalid service %s type: %s, forcing Type=simple", s.Filename, serviceType)
 				s.Type = "simple"
 			}
 		}
@@ -108,6 +108,7 @@ func ParseConfig(r io.Reader, filename string) (Service, error) {
 	s := Service{
 		Deleted: false,
 		AutoStart: true,
+		Filename: filename,
 	}
 	var line string
 	var err error
@@ -228,7 +229,7 @@ func checkSanity(service *Service, filename string) error {
 	}
 
 	if service.Type == "forking" && service.PIDFile == "" {
-		clog.Warn("service %s is type forking without PIDFile, consider setting it")
+		clog.Warn("service %s is type forking without PIDFile, consider setting it", service.Name)
 	}
 
 	return nil
