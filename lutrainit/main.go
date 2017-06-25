@@ -134,8 +134,9 @@ func main() {
 
 	if !MainConfig.StartedReexec {
 		// Mount local filesytems
-		clog.Info("[lutra] Mounting local file systems")
-		MountAllExcept(NetFs)
+		// This have been moved in a .service file for now
+		//clog.Info("[lutra] Mounting local file systems")
+		//MountAllExcept(NetFs)
 
 		// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
 		run("swapon", "-a")
@@ -171,14 +172,16 @@ func main() {
 	// Parse configurations, reexec is counted as reloading
 	ReloadConfig(MainConfig.StartedReexec, false)
 
-	// We finally have a filesystem mounted and the configuration is parsed
-	if err := setupLogging(true); err != nil {
-		clog.Error(2, "Failed to add file logging to logger: %s", err.Error())
-	}
-
 	if !MainConfig.StartedReexec {
 		// Start all services from StartupServices in the right Needs/Provide order
 		StartServices()
+	}
+
+	// the log directory could be mounted separated or tmpfs
+	// we add the log file after all services are started, especially mountall.service
+	// We finally have a filesystem mounted and the configuration is parsed
+	if err := setupLogging(true); err != nil {
+		clog.Error(2, "Failed to add file logging to logger: %s", err.Error())
 	}
 
 	// Kick Zombies out in the background
