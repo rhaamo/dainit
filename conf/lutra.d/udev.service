@@ -3,5 +3,6 @@ Description: This is a sample config file to start udevd.
 Type: forking
 
 Provides: devfs
+# udevd could also be "/lib/systemd/systemd-udevd" if systemd still installed
 Startup: udevd --daemon && udevadm trigger --action=add --type=subsystems && udevadm trigger --action=add --type=devices && udevadm settle
 Shutdown: udevadm control --exit
