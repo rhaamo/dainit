@@ -60,12 +60,12 @@ func waitAndSpawnGettys() {
 	wg := sync.WaitGroup{}
 
 	wg.Add(len(GettysList))
-	for _, getty := range GettysList {
+	for idx, getty := range GettysList {
 		go func(followGetty *FollowGetty) {
 			defer wg.Done()
 			for {
 				if followGetty.Managed {
-					if err := spawnGetty(followGetty.Autologin, followGetty.TTY, followGetty); err != nil {
+					if err := spawnGetty(followGetty.Autologin, followGetty.TTY, idx); err != nil {
 						followGetty.PID = 0
 						clog.Error(2, err.Error())
 					}
@@ -104,7 +104,7 @@ func manageAndSpawnGettys() {
 			if user != "" {
 				GettysList[0].Autologin = user
 			}
-			if err := spawnGetty(user, ttys[0], GettysList[0]); err != nil {
+			if err := spawnGetty(user, ttys[0], 0); err != nil {
 				GettysList[0].PID = 0
 				clog.Error(2, err.Error())
 			}
@@ -131,10 +131,16 @@ func manageAndSpawnGettys() {
 			go func(user, tty string, idx int) {
 				defer wg.Done()
 				for {
+					GettysListMu.Lock()
 					GettysList[idx] = &FollowGetty{TTY: tty, Managed: true, Autologin: user}
+					GettysListMu.Unlock()
+
 					clog.Trace("getty idx %d tty %s autologin %s", idx, tty, user)
-					if err := spawnGetty(user, tty, GettysList[idx]); err != nil {
+					if err := spawnGetty(user, tty, idx); err != nil {
+						GettysListMu.Lock()
 						GettysList[idx].PID = 0
+						GettysListMu.Unlock()
+
 						clog.Error(2, err.Error())
 					}
 
@@ -152,7 +158,7 @@ func manageAndSpawnGettys() {
 }
 
 // Spawn a single tty on tty, logging in with user autologin.
-func spawnGetty(autologin, tty string, gettyFollow *FollowGetty) error {
+func spawnGetty(autologin, tty string, idx int) error {
 	clog.Info("Spawning getty on %s with user %s", tty, autologin)
 
 	var cmd *exec.Cmd
@@ -176,7 +182,7 @@ func spawnGetty(autologin, tty string, gettyFollow *FollowGetty) error {
 		return err
 	}
 
-	gettyFollow.PID = cmd.Process.Pid
+	GettysList[idx].PID = cmd.Process.Pid
 
 	return cmd.Wait()
 }
