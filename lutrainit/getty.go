@@ -133,9 +133,10 @@ func manageAndSpawnGettys() {
 				for {
 					GettysListMu.Lock()
 					GettysList[idx] = &FollowGetty{TTY: tty, Managed: true, Autologin: user}
-					GettysListMu.Unlock()
 
 					clog.Trace("getty idx %d tty %s autologin %s", idx, tty, user)
+					GettysListMu.Unlock()
+
 					if err := spawnGetty(user, tty, idx); err != nil {
 						GettysListMu.Lock()
 						GettysList[idx].PID = 0
@@ -182,7 +183,9 @@ func spawnGetty(autologin, tty string, idx int) error {
 		return err
 	}
 
+	GettysListMu.Lock()
 	GettysList[idx].PID = cmd.Process.Pid
+	GettysListMu.Unlock()
 
 	return cmd.Wait()
 }
