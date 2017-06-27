@@ -8,6 +8,7 @@ import (
 	"time"
 	"runtime"
 	"github.com/go-clog/clog"
+	"os"
 )
 
 var (
@@ -97,6 +98,10 @@ func socketInitctl() {
 	GoRPCServer = gorpc.NewUnixServer("/run/ottersock", d.NewHandlerFunc())
 	clog.Info("[lutra] RPC starting on socket: %s", GoRPCServer.Addr)
 	GoRPCStarted = true
+
+	if err := os.Chmod("/run/ottersock", 0757); err != nil {
+		clog.Error(2, "cannot fixe rights on socket: %s", err.Error())
+	}
 
 	if err := GoRPCServer.Serve(); err != nil {
 		GoRPCStarted = false
