@@ -23,8 +23,17 @@ ctl:
 	@echo "Building client"
 	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
 
+init-race:
+	@echo "Building init"
+	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -race -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+
+ctl-race:
+	@echo "Building client"
+	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -race -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
 
 build: init ctl
+
+build-race: init-race ctl-race
 
 build-dev: govet
 	go build -o lutrainit -v -tags '$(TAGS)' $$(go list ./... | grep -v /vendor/)
