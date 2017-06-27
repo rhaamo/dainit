@@ -11,6 +11,7 @@ import (
 	"github.com/valyala/gorpc"
 	"encoding/gob"
 	"bytes"
+	"sync"
 )
 
 var (
@@ -22,7 +23,8 @@ var (
 	StartupServices = make(map[ServiceType][]*StartupService)
 
 	// LoadedServices is used for any other actions, start, stop, etc.
-	LoadedServices = make(map[ServiceName]*Service)
+	LoadedServices 		= make(map[ServiceName]*Service)
+	LoadedServicesMu	= sync.RWMutex{}
 
 	// NetFs design the list of known network file systems to be avoided mounted at boot
 	NetFs = []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}

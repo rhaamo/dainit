@@ -14,7 +14,8 @@ var (
 	ttys = [11]string{"tty1", "tty2", "tty3", "tty4", "tty5", "tty6", "tty8", "tty9", "tty10", "tty11", "tty12"}
 
 	// GettysList of managed or unmanaged
-	GettysList = make(map[int]*FollowGetty)
+	GettysList 		= make(map[int]*FollowGetty)
+	GettysListMu	= sync.RWMutex{}
 )
 
 // FollowGetty struct with tracking infos
@@ -29,9 +30,11 @@ type FollowGetty struct {
 func ManageGettys() {
 	if MainConfig.StartedReexec {
 		// Defaulting gettys as unmanaged
+		GettysListMu.Lock()
 		for i := range GettysList {
 			GettysList[i].Managed = false
 		}
+		GettysListMu.Unlock()
 
 		waitAndSpawnGettys()
 	} else {
@@ -129,6 +132,7 @@ func manageAndSpawnGettys() {
 				defer wg.Done()
 				for {
 					GettysList[idx] = &FollowGetty{TTY: tty, Managed: true, Autologin: user}
+					clog.Trace("getty idx %d tty %s autologin %s", idx, tty, user)
 					if err := spawnGetty(user, tty, GettysList[idx]); err != nil {
 						GettysList[idx].PID = 0
 						clog.Error(2, err.Error())

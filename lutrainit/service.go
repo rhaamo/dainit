@@ -192,6 +192,9 @@ func StartServices() {
 
 // Start the Service s. if type is oneshot or forking
 func(s Service) Start() error {
+	LoadedServicesMu.Lock()
+	defer LoadedServicesMu.Unlock()
+
 	if s.State != NotStarted {
 		return fmt.Errorf("Service %v is %v", s.Name, s.State.String())
 	}
@@ -260,16 +263,21 @@ func(s Service) Start() error {
 }
 
 // StartSimple and track the PID and process state (for simple service without auto-fork function)
+// Please remember that this function locks in the middle (cmd.Wait()) for any mutex operation
 func(s Service) StartSimple() {
+	LoadedServicesMu.Lock()
 	s.State = Starting
 	LoadedServices[s.Name].State = Starting
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[s.Name].LastAction = Start
 	LoadedServices[s.Name].LastKnownPID = 0
+	LoadedServicesMu.Unlock()
 
 	if s.ExecPreStart != "" {
+		LoadedServicesMu.Lock()
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = PreStart
+		LoadedServicesMu.Unlock()
 
 		err := justExecACommand(s.ExecPreStart.String())
 		if err != nil {
@@ -282,37 +290,47 @@ func(s Service) StartSimple() {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
 		clog.Error(2,"[lutra] Service %s exited with error: %s", s.Name, err.Error())
+		LoadedServicesMu.Lock()
 		s.State = Errored
 		LoadedServices[s.Name].State = Errored
 		LoadedServices[s.Name].LastMessage = err.Error()
 		LoadedServices[s.Name].LastKnownPID = 0
+		LoadedServicesMu.Unlock()
 		return
 	}
 	// Waiting for the command to finish
+	LoadedServicesMu.Lock()
 	s.State = Started
 	LoadedServices[s.Name].State = Started
 	LoadedServices[s.Name].LastKnownPID = cmd.Process.Pid
+	LoadedServicesMu.Unlock()
 	clog.Info("[lutra] Started service %s", s.Name)
 
 	err := cmd.Wait()
 	if err != nil {
 		clog.Error(2, "[lutra] Service %s finished with error: %s", s.Name, err.Error())
+		LoadedServicesMu.Lock()
 		s.State = Stopped
 		LoadedServices[s.Name].State = Stopped
 		LoadedServices[s.Name].LastMessage = err.Error()
 		LoadedServices[s.Name].LastKnownPID = 0
+		LoadedServicesMu.Unlock()
 	} else {
+		LoadedServicesMu.Lock()
 		s.State = Stopped
 		clog.Info("[lutra] Service stopped:	 %s", s.Name)
 		LoadedServices[s.Name].State = Stopped
 		LoadedServices[s.Name].LastKnownPID = 0
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = Stop
+		LoadedServicesMu.Unlock()
 	}
 
 	if s.ExecPostStart != "" {
+		LoadedServicesMu.Lock()
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = PostStart
+		LoadedServicesMu.Unlock()
 
 		err := justExecACommand(s.ExecPostStart.String())
 		if err != nil {
@@ -449,8 +467,10 @@ func CheckAndStartService(s *Service) (err error) {
 // We manage the "cmd" by CheckAndStopService, no simple/forking logic here
 func shutdownProcess(s *Service, cmd string) (err error) {
 	if s.ExecPreStop != "" {
+		LoadedServicesMu.Lock()
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = PreStop
+		LoadedServicesMu.Unlock()
 
 		err = justExecACommand(s.ExecPreStop.String())
 		if err != nil {
@@ -465,8 +485,10 @@ func shutdownProcess(s *Service, cmd string) (err error) {
 	}
 
 	if s.ExecPostStop != "" {
+		LoadedServicesMu.Lock()
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = PostStop
+		LoadedServicesMu.Unlock()
 
 		err = justExecACommand(s.ExecPostStop.String())
 		if err != nil {
@@ -480,6 +502,9 @@ func shutdownProcess(s *Service, cmd string) (err error) {
 // CheckAndStopService will check if process running and stop
 func CheckAndStopService(s *Service) (err error) {
 	// Well, we don't really care if process is running, yeah ?
+	LoadedServicesMu.Lock()
+	defer LoadedServicesMu.Unlock()
+
 	LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 	LoadedServices[s.Name].LastAction = Stop
 
