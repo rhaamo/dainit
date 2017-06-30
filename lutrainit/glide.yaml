@@ -8,3 +8,11 @@ import:
 - package: github.com/mitchellh/go-ps
 - package: github.com/go-ini/ini
   version: ^1.28.0
+- package: github.com/urfave/cli
+  version: ^1.19.1
+- package: github.com/olekukonko/tablewriter
+- package: github.com/mattn/go-runewidth
+  version: ^0.0.2
+- package: github.com/gyuho/goraph
+  version: ^2.0.0
+- package: github.com/philopon/go-toposort
