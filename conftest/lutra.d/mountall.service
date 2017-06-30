@@ -1,0 +1,8 @@
+[order]
+WantedBy=basic.target
+
+[service]
+Description=Mount all filesystems
+Type=oneshot
+Autostart=true
+ExecStart=mount -a -t nonfs,nonfs4,nosmbfs,nocifs,nocodafs,noncpfs,noshfs,nofuse,nofuseblk,noglusterfs,nodavfs,nofuse.glusterfs -O no_netdev

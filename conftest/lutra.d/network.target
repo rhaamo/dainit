@@ -1,0 +1,6 @@
+[order]
+Requires=disk.target
+
+[service]
+Description=Network target
+Type=virtual

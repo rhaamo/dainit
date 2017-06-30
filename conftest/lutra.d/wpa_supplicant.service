@@ -1,0 +1,10 @@
+[order]
+WantedBy=network.target
+#Requires=loopback.service,udev.service
+
+[service]
+Autostart=false
+Description=This is a sample config file to start wpa_supplicant after udevd is started (which is needed to find the device wlan0.)
+Type=forking
+ExecStart=wpa_supplicant -Dnl80211 -iwlan0 -c/etc/wpa_supplicant.conf -B && dhclient wlan0
+ExecStop=killall wpa_supplicant

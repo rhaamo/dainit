@@ -1,0 +1,12 @@
+[order]
+WantedBy=disk.target
+#Requires=udev.service
+
+[service]
+Description=LVM2 poll daemon
+Type=forking
+Autostart=true
+
+ExecPreStart=mkdir -m 0700 -p /run/lvm
+ExecStart=/sbin/lvmpolld -t 60
+PIDFile=/run/lvmpolld.pid

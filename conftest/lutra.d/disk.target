@@ -1,0 +1,6 @@
+[order]
+Requires=basic.target
+
+[service]
+Description=Disk target
+Type=virtual

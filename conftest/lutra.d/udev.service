@@ -1,0 +1,10 @@
+[order]
+WantedBy=basic.target
+After=loopback.service
+
+[service]
+Description=This is a sample config file to start udevd.
+Type=forking
+# udevd could also be "/lib/systemd/systemd-udevd" if systemd still installed
+ExecStart=udevd --daemon && udevadm trigger --action=add --type=subsystems && udevadm trigger --action=add --type=devices && udevadm settle
+ExecStop=udevadm control --exit

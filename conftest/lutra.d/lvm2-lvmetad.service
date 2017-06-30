@@ -1,0 +1,13 @@
+[order]
+WantedBy=disk.target
+After=lvm2-lvpolld.service
+Requires=lvm2-lvpolld.service
+
+[service]
+Description=LVM2 metadata daemon
+Type=forking
+Autostart=true
+
+ExecPreStart=mkdir -m 0700 -p /run/lvm
+ExecStart=/sbin/lvmetad
+PIDFile=/run/lvmetad.pid

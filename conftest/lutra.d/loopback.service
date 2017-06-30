@@ -1,0 +1,9 @@
+[order]
+WantedBy=basic.target
+After=mountall.service
+
+[service]
+Description=This is a simple script to bring up the loopback network interface device (127.0.0.1)
+Type=oneshot
+Autostart=true
+ExecStart=ip link set up dev lo

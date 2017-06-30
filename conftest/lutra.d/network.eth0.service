@@ -1,0 +1,12 @@
+[order]
+WantedBy=network.target
+#Requires=loopback.service,udev.service
+
+[service]
+Description=Brings up eth0 and setup networking
+Type=oneshot
+Autostart=false
+
+ExecPreStart: mkdir -p /run/network && chown root:netdev /run/network
+ExecStart=ifup eth0
+ExecStop=ifdown eth0
