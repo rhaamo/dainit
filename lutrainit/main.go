@@ -1,17 +1,15 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"strings"
-	"github.com/go-clog/clog"
-	"syscall"
-	"fmt"
 	"github.com/valyala/gorpc"
-	"encoding/gob"
-	"bytes"
 	"sync"
+	"github.com/urfave/cli"
+	"strings"
+	"github.com/olekukonko/tablewriter"
+	toposort "github.com/philopon/go-toposort"
+	"github.com/go-clog/clog"
+	"fmt"
 )
 
 var (
@@ -51,42 +49,37 @@ var (
 
 )
 
-// Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
-// ones, and not /dev/null. This will block until the command finishes.
-func run(cmd string, args ...string) error {
-	c := exec.Command(cmd, args...)
-	c.Stdout = os.Stdout
-	c.Stdin = os.Stdin
-	c.Stderr = os.Stderr
-	return c.Run()
-}
-
-// Runs a command and waits for it to finish.
-func runquiet(cmd string, args ...string) error {
-	c := exec.Command(cmd, args...)
-	return c.Run()
-}
-
-// SetHostname set the hostname
-func SetHostname(hostname []byte) {
-	proc, err := os.Create("/proc/sys/kernel/hostname")
-	if err != nil {
-		clog.Error(2, err.Error())
-		return
-	}
-	defer proc.Close()
-
-	_, err = proc.Write(hostname)
-	if err != nil {
-		clog.Error(2, err.Error())
-		return
-	}
-}
-
 func main() {
-	reexec := os.Getenv("LUTRAINIT_REEXECING")
-	MainConfig.StartedReexec = reexec == "true"
+	app := cli.NewApp()
+	app.Name = "lutrainit"
+	app.Usage = "lutra init daemon"
+	app.Version = LutraVersion
+	app.Commands = []cli.Command {
+		CmdServicesTree,
+		CmdServicesList,
+		CmdSysinit,
+	}
+	app.Flags = append(app.Flags, []cli.Flag{}...)
 
+	// No argument will start the system init processing
+	if len(os.Args) <= 1 {
+		os.Args = []string{"lutrainit", "sysinit"}
+	}
+
+	app.Run(os.Args)
+}
+
+var CmdServicesTree = cli.Command {
+	Name: "services-tree",
+	Usage: "List the services tree",
+	Description: "List the services tree",
+	Action: dumpServicesTree,
+	Flags: []cli.Flag{
+		cli.StringFlag{Name: "confdir", Value: "/etc/lutrainit", Usage: "Lutrainit config directory"},
+	},
+}
+
+func dumpServicesTree(ctx *cli.Context) error {
 	err := setupLogging(false); if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
@@ -94,257 +87,132 @@ func main() {
 		os.Exit(-1)
 	}
 
-	if MainConfig.StartedReexec {
-		fmt.Println("Re-exec-ing of lutrainit in progress")
-		err := gobelinFromFile()
-		if err != nil {
-			println("error deserializing structs from files. expect misbehaviors or panics.")
+	var baseDir string
+
+	if !ctx.IsSet("confdir") {
+		baseDir = "/etc/lutrainit"
+	} else {
+		baseDir = ctx.String("confdir")
+	}
+	ReloadConfig(false, baseDir, false)
+
+	println("len services", len(LoadedServices))
+	graph := toposort.NewGraph(len(LoadedServices))
+
+	// Add nodes
+	for _, v := range LoadedServices {
+		ok := graph.AddNode(string(v.Name)); if ok {
+			fmt.Printf("Added node '%s'\n", v.Name)
+		} else {
+			fmt.Printf("Cannot add node '%s'\n", v.Name)
 		}
 	}
 
-	// First of first, who are we ?
-	clog.Info("~~ LutraInit %s starting...", LutraVersion)
-	clog.Info("~~ Build commit %s", LutraBuildGitHash)
-	clog.Info("~~ Build time %s", LutraBuildTime)
+	// Add edges
+	for _, s := range LoadedServices {
+		// WantedBy
+		if s.WantedBy != "" {
+			dep := string(LoadedServices[ServiceName(s.WantedBy)].Name)
+			ok := graph.AddEdge(string(s.Name), dep); if ok {
+				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			} else {
+				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+			}
+		}
 
-	if !thePidOne() {
-		clog.Warn("[lutra] I'm sorry but I'm supposed to be run as an init.")
+		// After
+		for _, aft := range s.After {
+			dep := string(LoadedServices[ServiceName(aft)].Name)
+			ok := graph.AddEdge(string(s.Name), dep); if ok {
+				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			} else {
+				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+			}
+		}
+		// Before
+		for _, bf := range s.Before {
+			dep := string(LoadedServices[ServiceName(bf)].Name)
+			ok := graph.AddEdge(string(s.Name), dep); if ok {
+				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			} else {
+				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+			}
+		}
+		// Requires
+		for _, req := range s.Requires {
+			dep := string(LoadedServices[ServiceName(req)].Name)
+			ok := graph.AddEdge(string(s.Name), dep); if ok {
+				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			} else {
+				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+			}
+		}
+	}
+
+	// sort
+	list, ok := graph.Toposort()
+	if !ok {
+		clog.Error(2, "Cycle detected :(")
+		return fmt.Errorf("Cycle detected")
+	}
+
+	fmt.Printf("\nBoot services order:\n")
+	for _, s := range list {
+		if strings.HasSuffix(s,".target") || strings.HasSuffix(s, ".state"){
+			fmt.Printf("+ %s\n", s)
+		} else {
+			fmt.Printf(" \\__ %s\n", s)
+		}
+	}
+
+	return nil
+}
+
+var CmdServicesList = cli.Command {
+	Name: "services-list",
+	Usage: "List the services list",
+	Description: "List the services",
+	Action: dumpServicesList,
+	Flags: []cli.Flag{
+		cli.StringFlag{Name: "confdir", Value: "/etc/lutrainit", Usage: "Lutrainit config directory"},
+	},
+}
+
+func dumpServicesList(ctx *cli.Context) error {
+	err := setupLogging(false); if err != nil {
+		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
+		// we have no choice
+		// PANIC PANIC PANIC
 		os.Exit(-1)
 	}
 
-	// First of all, we need to be sure we have a correct PATH setted
-	// This is usefull if we use lutrainit in an initramfs since PATH would be unset
-	curEnvPath := os.Getenv("PATH")
-	if len(strings.TrimSpace(curEnvPath)) == 0 {
-		os.Setenv("PATH", "/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin")
-		clog.Info("[lutra] Empty $PATH, fixed.")
+	var baseDir string
+
+	if !ctx.IsSet("confdir") {
+		baseDir = "/etc/lutrainit"
+	} else {
+		baseDir = ctx.String("confdir")
 	}
-	clog.Info("[lutra] Current $PATH is: %s", os.Getenv("PATH"))
+	ReloadConfig(false, baseDir, false)
 
-	if !MainConfig.StartedReexec {
-		// Remount root as rw.
-		//
-		// This should be handled by mount -a according to mount(8), since the flags that
-		// / is mounted with don't match /etc/fstab, but for some reason it's not remounting
-		// root as rw even though it's not ro in /etc/fstab. TODO: Look into this..
-		clog.Info("[lutra] Remounting root filesystem")
-		Remount("/")
-	}
-
-	// Start socket in background
-	go socketInitctl()
-
-	if !MainConfig.StartedReexec {
-		// Mount local filesytems
-		// This have been moved in a .service file for now
-		//clog.Info("[lutra] Mounting local file systems")
-		//MountAllExcept(NetFs)
-
-		// Activate swap partitions, mount -a doesn't do this since they aren't really mounted anywhere
-		run("swapon", "-a")
-
-		// Set the hostname for getty to be happy.
-		if hostname, err := ioutil.ReadFile("/etc/hostname"); err == nil {
-			SetHostname(hostname)
-		} else {
-			clog.Error(2, "[lutra] Error setting hostname: %s", err.Error())
-		}
-
-		// There's a little (dare I say, a lot?) of black magic that seems to
-		// happen on a modern Linux systems for filesystems.
-		//
-		// Time was, everything would go into /etc/fstab.
-		//
-		// If you read "Demystifying the init system" (https://felipec.wordpress.com/2013/11/04/init/)
-		// he manually mounts /proc, /sys, /run, etc.
-		//
-		// When I do that on my Debian system, I get an "already mounted" error
-		// despite it not being in /etc/fstab, so I don't mount them here (either
-		// the kernel is doing it, or Debian is lying about init being the first
-		// process.)
-		//
-		// However, /dev/shm is neither automounted, nor in fstab, and without it
-		// Chromium won't start, so it's done manually here.
-		//
-		// (It should probably just go into my fstab to be honest, but then it seems
-		// that I'd need to manually add it every time I install a new system..)
-		Mount("tmpfs", "shm", "/dev/shm", "mode=1777,nosuid,nodev")
-	}
-
-	// Parse configurations, reexec is counted as reloading
-	ReloadConfig(MainConfig.StartedReexec, false)
-
-	if !MainConfig.StartedReexec {
-		// Start all services from StartupServices in the right Needs/Provide order
-		StartServices()
-	}
-
-	// the log directory could be mounted separated or tmpfs
-	// we add the log file after all services are started, especially mountall.service
-	// We finally have a filesystem mounted and the configuration is parsed
-	if err := setupLogging(true); err != nil {
-		clog.Error(2, "Failed to add file logging to logger: %s", err.Error())
-	}
-
-	// Kick Zombies out in the background
-	go reapChildren()
-
-	ManageGettys()
-
-	// The ttys exited. Kill processes, unmount filesystems and halt the system.
-	doShutdown(false)
-}
-
-func thePidOne() bool {
-	if os.Getpid() == 1 {
-		return true
-	}
-
-	return false
-}
-
-func setupLogging(withFile bool) (err error) {
-	err = clog.New(clog.CONSOLE, clog.ConsoleConfig{
-		Level: clog.TRACE, // record all logs
-		BufferSize: 100,     // log async, 0 is sync
-	})
-	if err != nil {
-		println("Whoops, cannot initialize logging to console:", err.Error())
-		return err
-	}
-
-	if withFile {
-		err = clog.New(clog.FILE, clog.FileConfig{
-			Level:      clog.TRACE,
-			BufferSize: MainConfig.Log.BufferLen,
-			Filename:   MainConfig.Log.Filename,
-			FileRotationConfig: clog.FileRotationConfig{
-				Rotate:   MainConfig.Log.Rotate,
-				Daily:    MainConfig.Log.Daily,
-				MaxSize:  1 << uint(MainConfig.Log.MaxSize),
-				MaxLines: MainConfig.Log.MaxLines,
-				MaxDays:  MainConfig.Log.MaxDays,
-			},
+	data := [][]string{}
+	for _, service := range LoadedServices {
+		data = append(data, []string{
+			string(service.Name),
+			service.Type,
+			strings.Join(service.Requires, ","),
+			strings.Join(service.After, ","),
+				strings.Join(service.Before, ","),
 		})
-		if err != nil {
-			clog.Error(2, "Cannot initialize log to file: %s", err.Error())
-		}
-	}
-	return err
-}
-
-func gobelinToFile() (err error) {
-	bls := new(bytes.Buffer)
-	bgl := new(bytes.Buffer)
-
-	ls := gob.NewEncoder(bls)
-	gl := gob.NewEncoder(bgl)
-
-	err = ls.Encode(LoadedServices)
-	if err != nil {
-		clog.Error(2, "error encoding LoadedServices: %s", err.Error())
-		return err
 	}
 
-	err = gl.Encode(GettysList)
-	if err != nil {
-		clog.Error(2, "error encoding GettysList: %s", err.Error())
-		return err
-	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"name", "type", "requires", "after", "before"})
 
-	err = ioutil.WriteFile(lsFnameSerialized, bls.Bytes(), 0644)
-	if err != nil {
-		clog.Error(2, "error saving serialized file %s: %s", lsFnameSerialized, err.Error())
-		return err
+	for _, v := range data {
+		table.Append(v)
 	}
-
-	err = ioutil.WriteFile(glFnameSerialized, bgl.Bytes(), 0644)
-	if err != nil {
-		clog.Error(2, "error saving serialized file %s: %s", glFnameSerialized, err.Error())
-		return err
-	}
-
-	clog.Info("LoadedServices and GettysList have been serialized to file")
-	return nil
-}
-
-func gobelinFromFile() (err error) {
-	lsBytes, err := ioutil.ReadFile(lsFnameSerialized)
-	if err != nil {
-		clog.Error(2, "error loading serialized file %s: %s", lsFnameSerialized, err.Error())
-		return err
-	}
-
-	glBytes, err := ioutil.ReadFile(glFnameSerialized)
-	if err != nil {
-		clog.Error(2, "error loading serialized file %s: %s", glFnameSerialized, err.Error())
-		return err
-	}
-
-	ls := gob.NewDecoder(bytes.NewReader(lsBytes))
-	if err != nil {
-		clog.Error(2, "error decoding LoadedServices: %s", err.Error())
-		return err
-	}
-
-	err = ls.Decode(&LoadedServices)
-	if err != nil {
-		clog.Error(2, "error mapping decoded LoadedServices: %s", err.Error())
-		return err
-	}
-
-	gl := gob.NewDecoder(bytes.NewReader(glBytes))
-	if err != nil {
-		clog.Error(2, "error decoding GettysList: %s", err.Error())
-		return err
-	}
-
-	err = gl.Decode(&GettysList)
-	if err != nil {
-		clog.Error(2, "error mapping decoded GettysList: %s", err.Error())
-		return err
-	}
-
-	// Remove old serializing files
-	if err = os.Remove(lsFnameSerialized); err != nil {
-		clog.Error(2, "error removing file %s: %s", lsFnameSerialized, err.Error())
-		return err
-	}
-	if err = os.Remove(glFnameSerialized); err != nil {
-		clog.Error(2, "error removing file %s: %s", glFnameSerialized, err.Error())
-		return err
-	}
-
-	clog.Info("LoadedServices and GettysList have been de-serialized from file")
+	table.Render()
 
 	return nil
-}
-
-// ReExecInit take care of stopping RPC server, removing file logger and serialization before execve()
-func ReExecInit() {
-	fmt.Println("reexecing...")
-
-	// Stop GoRPC
-	if GoRPCStarted {
-		GoRPCServer.Stop()
-		GoRPCStarted = false
-	}
-
-	// Remove file logger
-	setupLogging(false)
-
-	// Serialize the LoadedServices struct
-	err := gobelinToFile()
-	if err != nil {
-		clog.Error(2, "error serializing structures. expect misbehaviors or panics.")
-	}
-
-	// Prepare new environment
-	os.Setenv("LUTRAINIT_REEXECING", "true")
-
-	if err := syscall.Exec(os.Args[0], os.Args, os.Environ()); err != nil {
-		fmt.Println("reexec failed:", err)
-		// What to do ?
-		// Exit ? Continue ? Panic ?
-	}
 }

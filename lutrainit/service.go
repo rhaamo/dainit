@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"github.com/mitchellh/go-ps"
 	"syscall"
+	"github.com/gyuho/goraph"
 )
 
 const (
@@ -137,12 +138,22 @@ type Service struct {
 	Shutdown 	Command
 
 	ExecPreStart	Command
-	ExecPreStop		Command
+	ExecStart		Command
 	ExecPostStart	Command
+	ExecPreStop		Command
+	ExecStop		Command
 	ExecPostStop	Command
 
 	Deleted			bool
 	Filename		string
+
+	// Topo dependencies
+	Requires		[]string
+	Before			[]string
+	After			[]string
+	WantedBy		string
+
+	Node			goraph.ID
 }
 
 // StartServices starts all declared services at start

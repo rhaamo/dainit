@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"github.com/go-clog/clog"
-	"os"
 	"strings"
 	"github.com/rhaamo/lutrainit/shared/ipc"
 	"time"
@@ -33,115 +30,93 @@ var (
 	}
 )
 
-func parseLine(line string, s *Service) error {
-	if strings.HasPrefix(line, "Needs:") {
-		specified := strings.Split(strings.TrimPrefix(line, "Needs:"), ",")
-		for _, nd := range specified {
-			s.Needs = append(s.Needs, ServiceType(strings.TrimSpace(nd)))
-		}
-	} else if strings.HasPrefix(line, "Provides:") {
-		specified := strings.Split(strings.TrimPrefix(line, "Provides:"), ",")
-		for _, nd := range specified {
-			s.Provides = append(s.Provides, ServiceType(strings.TrimSpace(nd)))
-		}
-	} else if strings.HasPrefix(line, "Startup:") {
-		if s.Startup != "" {
-			return fmt.Errorf("Startup already set")
-		}
-		s.Startup = Command(strings.TrimSpace(strings.TrimPrefix(line, "Startup:")))
-	} else if strings.HasPrefix(line, "Shutdown:") {
-		if s.Shutdown != "" {
-			return fmt.Errorf("Shutdown already set")
-		}
-		s.Shutdown = Command(strings.TrimSpace(strings.TrimPrefix(line, "Shutdown:")))
-	} else if strings.HasPrefix(line, "Name:") {
-		if s.Name == "" {
-			s.Name = ServiceName(strings.TrimSpace(strings.TrimPrefix(line, "Name:")))
-		}
-	} else if strings.HasPrefix(line, "Description:") {
-		if s.Description == "" {
-			s.Description = strings.TrimSpace(strings.TrimPrefix(line, "Description:"))
-		}
-	} else if strings.HasPrefix(line, "PIDFile:") {
-		if s.PIDFile == "" {
-			s.PIDFile = strings.TrimSpace(strings.TrimPrefix(line, "PIDFile:"))
-		}
-	} else if strings.HasPrefix(line, "Type:") {
-		if s.Type == "" {
-			serviceType := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
-			switch serviceType {
-			case "simple":
-				s.Type = "simple"
-			case "forking":
-				s.Type = "forking"
-			case "oneshot":
-				s.Type = "oneshot"
-			default:
-				clog.Warn("[lutra] Invalid service %s type: %s, forcing Type=simple", s.Filename, serviceType)
-				s.Type = "simple"
-			}
-		}
-	} else if strings.HasPrefix(line, "Autostart:") {
-		s.AutoStart = strings.TrimSpace(strings.TrimPrefix(line, "Autostart:")) == "true"
-	} else if strings.HasPrefix(line, "ExecPreStart:") {
-		if s.ExecPreStart == "" {
-			s.ExecPreStart = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPreStart:")))
-		}
-	} else if strings.HasPrefix(line, "ExecPreStop:") {
-		if s.ExecPreStop == "" {
-			s.ExecPreStop = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPreStop:")))
-		}
-	} else if strings.HasPrefix(line, "ExecPostStart:") {
-		if s.ExecPostStart == "" {
-			s.ExecPostStart = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPostStart:")))
-		}
-	} else if strings.HasPrefix(line, "ExecPostStop:") {
-		if s.ExecPostStop == "" {
-			s.ExecPostStop = Command(strings.TrimSpace(strings.TrimPrefix(line, "ExecPostStop:")))
-		}
-	}
-	return nil
-}
+/*
+description
+pidfile
+type
+autostart
+execprestart...
+ */
 
 // ParseConfig a single config file into the services it provides
-func ParseConfig(r io.Reader, filename string) (Service, error) {
+func ParseConfig(baseDir string, fname string) (Service, error) {
 	s := Service{
 		Deleted: false,
 		AutoStart: true,
-		Filename: filename,
+		Filename: fname,
+		Name: ServiceName(fname),
 	}
-	var line string
-	var err error
-	scanner := bufio.NewReader(r)
 
-	for {
-		line, err = scanner.ReadString('\n')
-		switch err {
-		case io.EOF:
-			if err := parseLine(line, &s); err != nil {
-				clog.Error(2, err.Error())
-			}
-
-			// Check for configuration sanity before returning
-			if err := checkSanity(&s, filename); err != nil {
-				return Service{}, err
-			}
-
-			return s, nil
-		case nil:
-			if err := parseLine(line, &s); err != nil {
-				clog.Error(2, err.Error())
-			}
-		default:
-			return Service{}, err
-		}
+	if ! ipc.IsCustASCII(fname) {
+		return s, fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", fname, s.Name)
 	}
+
+
+	Cfg, err := ini.InsensitiveLoad(fmt.Sprintf("%s/lutra.d/%s", baseDir, fname))
+	if err != nil {
+		clog.Error(2, "Failed to parse '%s': %v", fname, err)
+		return s, err
+	}
+	Cfg.NameMapper = ini.TitleUnderscore
+
+	sec, err := Cfg.GetSection("order")
+	if err != nil {
+		clog.Error(2, "service %s does not contains an order section", fname)
+		return s, fmt.Errorf("service %s does not contains an order section", fname)
+	}
+
+	s.Requires = sec.Key("Requires").Strings(",")
+	s.Before = sec.Key("Before").Strings(",")
+	s.After = sec.Key("After").Strings(",")
+	if strings.HasSuffix(string(s.Name), ".target") {
+		s.WantedBy = sec.Key("WantedBy").MustString("")
+	} else {
+		s.WantedBy = sec.Key("WantedBy").MustString("multi-user.target")
+	}
+
+	sec, err = Cfg.GetSection("service")
+	if err != nil {
+		clog.Error(2, "service %s does not contains an service section", fname)
+		return s, fmt.Errorf("service %s does not contains an service section", fname)
+	}
+
+	s.ExecPreStart = Command(sec.Key("ExecPreStart").MustString(""))
+	s.ExecStart = Command(sec.Key("ExecStart").MustString(""))
+	s.ExecPostStart = Command(sec.Key("ExecPostStart").MustString(""))
+	s.ExecPreStop = Command(sec.Key("ExecPreStop").MustString(""))
+	s.ExecStop = Command(sec.Key("ExecStop").MustString(""))
+	s.ExecPostStop = Command(sec.Key("ExecPostStop").MustString(""))
+
+	s.Description = sec.Key("Description").MustString("")
+	s.PIDFile = sec.Key("PIDFile").MustString("")
+	s.AutoStart = sec.Key("Autostart").MustBool(false)
+
+	s.Type = sec.Key("Type").MustString("forking")
+	if s.Type != "forking" && s.Type != "simple" && s.Type != "oneshot" && s.Type != "virtual" {
+		clog.Error(2, "service %s invalid type: %s", fname, s.Type)
+		return s, fmt.Errorf("service %s invalid type: %s", fname, s.Type)
+	}
+
+	// some sanity check
+	// Must have an ExecStart, execept if it's a virtual service
+	if s.Type != "virtual" && s.ExecStart == "" {
+		return s, fmt.Errorf("service %s does not have an ExecStart command", fname)
+	}
+
+	// forking must have pidfile
+	if s.Type == "forking" && s.PIDFile == "" {
+		clog.Warn("service %s does not have a PIDFile, considers setting it", fname)
+	}
+
+	return s, err
 }
 
 // ParseServiceConfigs parse all the config in directory dir return a map of
 // providers of ServiceTypes from that directory.
-func ParseServiceConfigs(dir string, reloading bool) error {
-	files, err := ioutil.ReadDir(dir)
+func ParseServiceConfigs(baseDir string, reloading bool) error {
+	cfgsDir := fmt.Sprintf("%s/lutra.d", baseDir)
+
+	files, err := ioutil.ReadDir(cfgsDir)
 	if err != nil {
 		return err
 	}
@@ -152,32 +127,15 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 		}
 
 		// We only want to parse files ending with .service
-		if !strings.HasSuffix(fstat.Name(), ".service") {
+		if !strings.HasSuffix(fstat.Name(), ".service") &&
+			!strings.HasSuffix(fstat.Name(), ".target") {
 			continue
 		}
 
-		f, err := os.Open(dir + "/" + fstat.Name())
+		s, err := ParseConfig(baseDir, fstat.Name())
 		if err != nil {
 			clog.Error(2, err.Error())
 			continue
-		}
-		s, err := ParseConfig(f, fstat.Name())
-		f.Close()
-		if err != nil {
-			clog.Error(2, err.Error())
-			continue
-		}
-
-		for _, t := range s.Provides {
-			if s.AutoStart {
-				StartupServices[t] = append(StartupServices[t], &StartupService{
-					Name: s.Name,
-					AutoStart: s.AutoStart,
-
-					Needs: s.Needs,
-					Provides: s.Provides,
-				})
-			}
 		}
 
 		// If we are not reloading, set initial state and actions
@@ -210,31 +168,6 @@ func ParseServiceConfigs(dir string, reloading bool) error {
 	return nil
 }
 
-func checkSanity(service *Service, filename string) error {
-
-	if ! ipc.IsCustASCII(string(service.Name)) {
-		return fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", filename, service.Name)
-	}
-
-	for _, provide := range service.Provides {
-		if !ipc.IsCustASCIISpace(string(provide)) {
-			return fmt.Errorf("%s has invalid provides '%s', only a-Z0-9_-. allowed", filename, provide)
-		}
-	}
-
-	for _, need := range service.Needs {
-		if !ipc.IsCustASCIISpace(string(need)) {
-			return fmt.Errorf("%s has invalid needs '%s', only a-Z0-9_-. allowed", filename, need)
-		}
-	}
-
-	if service.Type == "forking" && service.PIDFile == "" {
-		clog.Warn("service %s is type forking without PIDFile, consider setting it", service.Name)
-	}
-
-	return nil
-}
-
 // ParseSetupConfig parse the main configuration
 func ParseSetupConfig(fname string) (err error) {
 	Cfg, err := ini.InsensitiveLoad(fname)
@@ -261,17 +194,20 @@ func ParseSetupConfig(fname string) (err error) {
 }
 
 // ReloadConfig both Main and Services ones
-func ReloadConfig(reloading bool, withFile bool) (err error) {
+func ReloadConfig(reloading bool, baseDir string, withFile bool) (err error) {
 	if reloading {
 		clog.Info("Parsing configurations with reloading...")
 	} else {
 		clog.Info("Parsing configurations...")
 	}
 
-	if err := ParseSetupConfig("/etc/lutrainit/lutra.conf"); err != nil {
+	if err := ParseSetupConfig(fmt.Sprintf("%s/lutra.conf", baseDir)); err != nil {
 		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
 		return err
 	}
+	// TODO: sanity check that targets: basic, disk, network and multi-user are presents
+
+	// TODO: also check of invalid dependencies
 	clog.Info("Main config parsed.")
 
 	if err = setupLogging(withFile); err != nil {
@@ -286,7 +222,7 @@ func ReloadConfig(reloading bool, withFile bool) (err error) {
 	}
 
 	// Then re-parse
-	err = ParseServiceConfigs("/etc/lutrainit/lutra.d", reloading)
+	err = ParseServiceConfigs(baseDir, reloading)
 	if err != nil {
 		clog.Error(2, "[lutra] Cannot re-parse service configs: %s", err.Error())
 		return err

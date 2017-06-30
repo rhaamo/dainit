@@ -39,6 +39,7 @@
   - forking: service is expected to fork by himself, PIDFile: would be great
   - oneshot: expected to fork by himself, no stop/status possible, it's a one-shot thing
   - simple: daemon doesn't fork by himself
+  - virtual: used only for dependencies ordering
   
 Provides are mandatory, you can just put here the Name of the service.
 

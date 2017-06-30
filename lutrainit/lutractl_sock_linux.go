@@ -52,7 +52,7 @@ func socketInitctl() {
 	})
 
 	d.AddFunc("reload", func() *ipc.AnswerReload {
-		err := ReloadConfig(true, true)
+		err := ReloadConfig(true, "/etc/lutrainit",true)
 		if err != nil {
 			return &ipc.AnswerReload{Err: true, ErrStr: err.Error()}
 		}
