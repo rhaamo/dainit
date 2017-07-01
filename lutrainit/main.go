@@ -113,29 +113,29 @@ func dumpServicesTree(ctx *cli.Context) error {
 		// WantedBy
 		if s.WantedBy != "" {
 			dep := string(LoadedServices[ServiceName(s.WantedBy)].Name)
-			ok := graph.AddEdge(string(s.Name), dep); if ok {
-				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			ok := graph.AddEdge(dep, string(s.Name)); if ok {
+				fmt.Printf("Added WantedBy edge from '%s' to '%s'\n", dep, s.Name)
 			} else {
-				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+				fmt.Printf("Cannot add WantedBy edge from '%s' to '%s'\n", dep, s.Name)
 			}
 		}
 
 		// After
 		for _, aft := range s.After {
 			dep := string(LoadedServices[ServiceName(aft)].Name)
-			ok := graph.AddEdge(string(s.Name), dep); if ok {
-				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+			ok := graph.AddEdge(dep, string(s.Name)); if ok {
+				fmt.Printf("Added After edge from '%s' to '%s'\n", dep, s.Name)
 			} else {
-				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+				fmt.Printf("Cannot add After edge from '%s' to '%s'\n", dep, s.Name)
 			}
 		}
 		// Before
 		for _, bf := range s.Before {
 			dep := string(LoadedServices[ServiceName(bf)].Name)
 			ok := graph.AddEdge(string(s.Name), dep); if ok {
-				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
+				fmt.Printf("Added Before edge from '%s' to '%s'\n", s.Name, dep)
 			} else {
-				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
+				fmt.Printf("Cannot add Before edge from '%s' to '%s'\n", s.Name, dep)
 			}
 		}
 		// Requires
