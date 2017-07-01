@@ -76,7 +76,6 @@ func (g *Graph) Toposort() ([]string, bool) {
 
 		ms := make([]string, len(g.outputs[n]))
 		for m, i := range g.outputs[n] {
-			println("idx", i, " length", len(ms))
 			ms[i-1] = m
 		}
 
