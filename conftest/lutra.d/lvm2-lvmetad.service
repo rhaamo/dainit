@@ -1,7 +1,6 @@
 [order]
 WantedBy=disk.target
-After=lvm2-lvpolld.service
-Requires=lvm2-lvpolld.service
+Requires=udev.service
 
 [service]
 Description=LVM2 metadata daemon

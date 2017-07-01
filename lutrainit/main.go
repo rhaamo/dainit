@@ -7,9 +7,11 @@ import (
 	"github.com/urfave/cli"
 	"strings"
 	"github.com/olekukonko/tablewriter"
-	toposort "github.com/philopon/go-toposort"
+	"github.com/gyuho/goraph"
 	"github.com/go-clog/clog"
 	"fmt"
+	"time"
+	//"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -94,17 +96,23 @@ func dumpServicesTree(ctx *cli.Context) error {
 	} else {
 		baseDir = ctx.String("confdir")
 	}
-	ReloadConfig(false, baseDir, false)
+	if err = ReloadConfig(false, baseDir, false); err != nil {
+		return err
+	}
 
-	println("len services", len(LoadedServices))
-	graph := toposort.NewGraph(len(LoadedServices))
+	time.Sleep(500 * time.Microsecond)
+
+	graph := goraph.NewGraph()
 
 	// Add nodes
 	for _, v := range LoadedServices {
-		ok := graph.AddNode(string(v.Name)); if ok {
+		node := goraph.NewNode(string(v.Name))
+		v.Node = node.ID()
+		ok := graph.AddNode(node)
+		if ok {
 			fmt.Printf("Added node '%s'\n", v.Name)
 		} else {
-			fmt.Printf("Cannot add node '%s'\n", v.Name)
+			fmt.Printf("Cannot add node '%s': node already exists\n", v.Name)
 		}
 	}
 
@@ -112,45 +120,41 @@ func dumpServicesTree(ctx *cli.Context) error {
 	for _, s := range LoadedServices {
 		// WantedBy
 		if s.WantedBy != "" {
-			dep := string(LoadedServices[ServiceName(s.WantedBy)].Name)
-			ok := graph.AddEdge(dep, string(s.Name)); if ok {
-				fmt.Printf("Added WantedBy edge from '%s' to '%s'\n", dep, s.Name)
+			err = graph.AddEdge(LoadedServices[ServiceName(s.WantedBy)].Node, s.Node, 100); if err == nil {
+				fmt.Printf("Added WantedBy edge from '%s' to '%s'\n", s.WantedBy, s.Name)
 			} else {
-				fmt.Printf("Cannot add WantedBy edge from '%s' to '%s'\n", dep, s.Name)
+				fmt.Printf("Cannot add WantedBy edge from '%s' to '%s': %s\n", s.WantedBy, s.Name, err)
 			}
 		}
 
 		// After
 		for _, aft := range s.After {
-			dep := string(LoadedServices[ServiceName(aft)].Name)
-			ok := graph.AddEdge(dep, string(s.Name)); if ok {
-				fmt.Printf("Added After edge from '%s' to '%s'\n", dep, s.Name)
+			err = graph.AddEdge(LoadedServices[ServiceName(aft)].Node, s.Node, 100); if err == nil {
+				fmt.Printf("Added After edge from '%s' to '%s'\n", aft, s.Name)
 			} else {
-				fmt.Printf("Cannot add After edge from '%s' to '%s'\n", dep, s.Name)
+				fmt.Printf("Cannot add After edge from '%s' to '%s': %s\n", aft, s.Name, err)
 			}
 		}
 		// Before
 		for _, bf := range s.Before {
-			dep := string(LoadedServices[ServiceName(bf)].Name)
-			ok := graph.AddEdge(string(s.Name), dep); if ok {
-				fmt.Printf("Added Before edge from '%s' to '%s'\n", s.Name, dep)
+			err = graph.AddEdge(s.Node, LoadedServices[ServiceName(bf)].Node, 100); if err == nil {
+				fmt.Printf("Added Before edge from '%s' to '%s'\n", s.Name, bf)
 			} else {
-				fmt.Printf("Cannot add Before edge from '%s' to '%s'\n", s.Name, dep)
+				fmt.Printf("Cannot add Before edge from '%s' to '%s': %s\n", s.Name, bf, err)
 			}
 		}
 		// Requires
-		for _, req := range s.Requires {
-			dep := string(LoadedServices[ServiceName(req)].Name)
-			ok := graph.AddEdge(string(s.Name), dep); if ok {
-				fmt.Printf("Added edge from '%s' to '%s'\n", s.Name, dep)
-			} else {
-				fmt.Printf("Cannot add edge from '%s' to '%s'\n", s.Name, dep)
-			}
-		}
+		//for _, req := range s.Requires {
+		//	ok := graph.AddEdge(req, string(s.Name)); if ok {
+		//		fmt.Printf("Added Require edge from '%s' to '%s'\n", req, s.Name)
+		//	} else {
+		//		fmt.Printf("Cannot add Require edge from '%s' to '%s'\n", req, s.Name)
+		//	}
+		//}
 	}
 
 	// sort
-	list, ok := graph.Toposort()
+	list, ok := goraph.TopologicalSort(graph)
 	if !ok {
 		clog.Error(2, "Cycle detected :(")
 		return fmt.Errorf("Cycle detected")
@@ -158,10 +162,10 @@ func dumpServicesTree(ctx *cli.Context) error {
 
 	fmt.Printf("\nBoot services order:\n")
 	for _, s := range list {
-		if strings.HasSuffix(s,".target") || strings.HasSuffix(s, ".state"){
+		if strings.HasSuffix(s.String(),".target") || strings.HasSuffix(s.String(), ".state"){
 			fmt.Printf("+ %s\n", s)
 		} else {
-			fmt.Printf(" \\__ %s\n", s)
+			fmt.Printf(" - %s\n", s)
 		}
 	}
 

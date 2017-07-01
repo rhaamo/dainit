@@ -1,5 +1,5 @@
 [order]
-Requires=basic.target
+After=basic.target
 
 [service]
 Description=Disk target

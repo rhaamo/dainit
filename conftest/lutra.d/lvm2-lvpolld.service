@@ -1,6 +1,6 @@
 [order]
 WantedBy=disk.target
-#Requires=udev.service
+Requires=udev.service
 
 [service]
 Description=LVM2 poll daemon

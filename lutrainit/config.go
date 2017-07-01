@@ -205,9 +205,6 @@ func ReloadConfig(reloading bool, baseDir string, withFile bool) (err error) {
 		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
 		return err
 	}
-	// TODO: sanity check that targets: basic, disk, network and multi-user are presents
-
-	// TODO: also check of invalid dependencies
 	clog.Info("Main config parsed.")
 
 	if err = setupLogging(withFile); err != nil {
@@ -237,6 +234,38 @@ func ReloadConfig(reloading bool, baseDir string, withFile bool) (err error) {
 	if dissappeared > 0 {
 		clog.Info("[lutra] It looks like %d Services files dissappeared :|", dissappeared)
 	}
+
+	// TODO: sanity check that targets: basic, disk, network and multi-user are presents
+	for _, s := range LoadedServices {
+		if s.WantedBy != "" {
+			if _, ok := LoadedServices[ServiceName(s.WantedBy)]; !ok {
+				clog.Error(2, "service %s has inexistant WantedBy: %s", s.Name, s.WantedBy)
+				return fmt.Errorf("service %s has inexistant WantedBy: %s", s.Name, s.WantedBy)
+			}
+		}
+
+		for _, d := range s.Requires {
+			if _, ok := LoadedServices[ServiceName(d)]; !ok {
+				clog.Error(2, "service %s has inexistant Requires: %s", s.Name, d)
+				return fmt.Errorf("service %s has inexistant Requires: %s", s.Name, d)
+			}
+		}
+
+		for _, d := range s.After {
+			if _, ok := LoadedServices[ServiceName(d)]; !ok {
+				clog.Error(2, "service %s has inexistant After: %s", s.Name, d)
+				return fmt.Errorf("service %s has inexistant After: %s", s.Name, d)
+			}
+		}
+
+		for _, d := range s.Before {
+			if _, ok := LoadedServices[ServiceName(d)]; !ok {
+				clog.Error(2, "service %s has inexistant Before: %s", s.Name, d)
+				return fmt.Errorf("service %s has inexistant Before: %s", s.Name, d)
+			}
+		}
+	}
+
 	clog.Info("Services re-parsed.")
 
 	return err
