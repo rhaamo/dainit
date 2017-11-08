@@ -1,15 +1,15 @@
 package main
 
 import (
-	"os"
-	"github.com/valyala/gorpc"
-	"sync"
-	"github.com/urfave/cli"
-	"strings"
-	"github.com/olekukonko/tablewriter"
-	"github.com/gyuho/goraph"
-	"github.com/go-clog/clog"
 	"fmt"
+	"github.com/go-clog/clog"
+	"github.com/gyuho/goraph"
+	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli"
+	"github.com/valyala/gorpc"
+	"os"
+	"strings"
+	"sync"
 	"time"
 	//"github.com/davecgh/go-spew/spew"
 )
@@ -23,8 +23,8 @@ var (
 	StartupServices = make(map[ServiceType][]*StartupService)
 
 	// LoadedServices is used for any other actions, start, stop, etc.
-	LoadedServices 		= make(map[ServiceName]*Service)
-	LoadedServicesMu	= sync.RWMutex{}
+	LoadedServices   = make(map[ServiceName]*Service)
+	LoadedServicesMu = sync.RWMutex{}
 
 	// NetFs design the list of known network file systems to be avoided mounted at boot
 	NetFs = []string{"nfs", "nfs4", "smbfs", "cifs", "codafs", "ncpfs", "shfs", "fuse", "fuseblk", "glusterfs", "davfs", "fuse.glusterfs"}
@@ -48,7 +48,6 @@ var (
 	LutraBuildTime string
 	// LutraBuildGitHash is the git sha1 of the commit based on
 	LutraBuildGitHash string
-
 )
 
 func main() {
@@ -56,7 +55,7 @@ func main() {
 	app.Name = "lutrainit"
 	app.Usage = "lutra init daemon"
 	app.Version = LutraVersion
-	app.Commands = []cli.Command {
+	app.Commands = []cli.Command{
 		CmdServicesTree,
 		CmdServicesList,
 		CmdSysinit,
@@ -71,18 +70,19 @@ func main() {
 	app.Run(os.Args)
 }
 
-var CmdServicesTree = cli.Command {
-	Name: "services-tree",
-	Usage: "List the services tree",
+var CmdServicesTree = cli.Command{
+	Name:        "services-tree",
+	Usage:       "List the services tree",
 	Description: "List the services tree",
-	Action: dumpServicesTree,
+	Action:      dumpServicesTree,
 	Flags: []cli.Flag{
 		cli.StringFlag{Name: "confdir", Value: "/etc/lutrainit", Usage: "Lutrainit config directory"},
 	},
 }
 
 func dumpServicesTree(ctx *cli.Context) error {
-	err := setupLogging(false); if err != nil {
+	err := setupLogging(false)
+	if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
 		// PANIC PANIC PANIC
@@ -120,7 +120,8 @@ func dumpServicesTree(ctx *cli.Context) error {
 	for _, s := range LoadedServices {
 		// WantedBy
 		if s.WantedBy != "" {
-			err = graph.AddEdge(LoadedServices[ServiceName(s.WantedBy)].Node, s.Node, 100); if err == nil {
+			err = graph.AddEdge(LoadedServices[ServiceName(s.WantedBy)].Node, s.Node, 100)
+			if err == nil {
 				fmt.Printf("Added WantedBy edge from '%s' to '%s'\n", s.WantedBy, s.Name)
 			} else {
 				fmt.Printf("Cannot add WantedBy edge from '%s' to '%s': %s\n", s.WantedBy, s.Name, err)
@@ -129,15 +130,17 @@ func dumpServicesTree(ctx *cli.Context) error {
 
 		// After
 		for _, aft := range s.After {
-			err = graph.AddEdge(LoadedServices[ServiceName(aft)].Node, s.Node, 100); if err == nil {
-				fmt.Printf("Added After edge from '%s' to '%s'\n", aft, s.Name)
+			err = graph.AddEdge(s.Node, LoadedServices[ServiceName(aft)].Node, 100)
+			if err == nil {
+				fmt.Printf("Added After edge from '%s' to '%s'\n", s.Name, aft)
 			} else {
-				fmt.Printf("Cannot add After edge from '%s' to '%s': %s\n", aft, s.Name, err)
+				fmt.Printf("Cannot add After edge from '%s' to '%s': %s\n", s.Name, aft, err)
 			}
 		}
 		// Before
 		for _, bf := range s.Before {
-			err = graph.AddEdge(s.Node, LoadedServices[ServiceName(bf)].Node, 100); if err == nil {
+			err = graph.AddEdge(s.Node, LoadedServices[ServiceName(bf)].Node, 100)
+			if err == nil {
 				fmt.Printf("Added Before edge from '%s' to '%s'\n", s.Name, bf)
 			} else {
 				fmt.Printf("Cannot add Before edge from '%s' to '%s': %s\n", s.Name, bf, err)
@@ -162,7 +165,7 @@ func dumpServicesTree(ctx *cli.Context) error {
 
 	fmt.Printf("\nBoot services order:\n")
 	for _, s := range list {
-		if strings.HasSuffix(s.String(),".target") || strings.HasSuffix(s.String(), ".state"){
+		if strings.HasSuffix(s.String(), ".target") || strings.HasSuffix(s.String(), ".state") {
 			fmt.Printf("+ %s\n", s)
 		} else {
 			fmt.Printf(" - %s\n", s)
@@ -172,18 +175,19 @@ func dumpServicesTree(ctx *cli.Context) error {
 	return nil
 }
 
-var CmdServicesList = cli.Command {
-	Name: "services-list",
-	Usage: "List the services list",
+var CmdServicesList = cli.Command{
+	Name:        "services-list",
+	Usage:       "List the services list",
 	Description: "List the services",
-	Action: dumpServicesList,
+	Action:      dumpServicesList,
 	Flags: []cli.Flag{
 		cli.StringFlag{Name: "confdir", Value: "/etc/lutrainit", Usage: "Lutrainit config directory"},
 	},
 }
 
 func dumpServicesList(ctx *cli.Context) error {
-	err := setupLogging(false); if err != nil {
+	err := setupLogging(false)
+	if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
 		// PANIC PANIC PANIC
@@ -206,7 +210,7 @@ func dumpServicesList(ctx *cli.Context) error {
 			service.Type,
 			strings.Join(service.Requires, ","),
 			strings.Join(service.After, ","),
-				strings.Join(service.Before, ","),
+			strings.Join(service.Before, ","),
 		})
 	}
 
