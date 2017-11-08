@@ -130,11 +130,11 @@ func dumpServicesTree(ctx *cli.Context) error {
 
 		// After
 		for _, aft := range s.After {
-			err = graph.AddEdge(s.Node, LoadedServices[ServiceName(aft)].Node, 100)
+			err = graph.AddEdge(LoadedServices[ServiceName(aft)].Node, s.Node, 100)
 			if err == nil {
-				fmt.Printf("Added After edge from '%s' to '%s'\n", s.Name, aft)
+				fmt.Printf("Added After edge from '%s' to '%s'\n", aft, s.Name)
 			} else {
-				fmt.Printf("Cannot add After edge from '%s' to '%s': %s\n", s.Name, aft, err)
+				fmt.Printf("Cannot add After edge from '%s' to '%s': %s\n", aft, s.Name, err)
 			}
 		}
 		// Before
@@ -147,13 +147,14 @@ func dumpServicesTree(ctx *cli.Context) error {
 			}
 		}
 		// Requires
-		//for _, req := range s.Requires {
-		//	ok := graph.AddEdge(req, string(s.Name)); if ok {
-		//		fmt.Printf("Added Require edge from '%s' to '%s'\n", req, s.Name)
-		//	} else {
-		//		fmt.Printf("Cannot add Require edge from '%s' to '%s'\n", req, s.Name)
-		//	}
-		//}
+		for _, req := range s.Requires {
+			err := graph.AddEdge(LoadedServices[ServiceName(req)].Node, s.Node, 100)
+			if err == nil {
+				fmt.Printf("Added Require edge from '%s' to '%s'\n", req, s.Name)
+			} else {
+				fmt.Printf("Cannot add Require edge from '%s' to '%s'\n", req, s.Name)
+			}
+		}
 	}
 
 	// sort
