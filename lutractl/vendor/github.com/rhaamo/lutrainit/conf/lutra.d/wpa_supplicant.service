@@ -1,0 +1,9 @@
+Name: wpa_supplicant
+Description: This is a sample config file to start wpa_supplicant after udevd is started (which is needed to find the device wlan0.)
+Type: unknown
+Autostart: false
+
+Provides: network
+Needs: devfs
+Startup: wpa_supplicant -Dnl80211 -iwlan0 -c/etc/wpa_supplicant.conf -B && dhclient wlan0
+Shutdown: killall wpa_supplicant

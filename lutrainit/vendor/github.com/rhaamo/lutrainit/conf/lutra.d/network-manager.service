@@ -1,0 +1,12 @@
+Name: network-manager
+Description: network connection manager
+Type: forking
+Autostart: false
+
+PIDFile: /var/run/NetworkManager/NetworkManager.pid
+
+Startup: start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
+Shutdown: start-stop-daemon --stop --retry 5 --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
+
+Provides: network
+Needs: devfs

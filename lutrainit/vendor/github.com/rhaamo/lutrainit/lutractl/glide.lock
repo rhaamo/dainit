@@ -1,0 +1,8 @@
+hash: 4c933ead74a93adb654a2f6a8e7d944cddd79fa472fa325fbb8c9f9f3be89646
+updated: 2017-06-15T22:35:42.779866953+02:00
+imports:
+- name: github.com/urfave/cli
+  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: github.com/valyala/gorpc
+  version: 908281bef77441f2d0ec1792189b4032a1dace0c
+testImports: []

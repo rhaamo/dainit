@@ -1,0 +1,10 @@
+Name: network.eth0
+Description: Brings up eth0 and setup networking
+Type: oneshot
+
+ExecPreStart: mkdir -p /run/network && chown root:netdev /run/network
+Startup: ifup eth0
+Shutdown: ifdown eth0
+
+Provides: network
+Needs: devfs
