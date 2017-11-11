@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/go-ps"
 	"syscall"
 	"github.com/gyuho/goraph"
+	"strings"
 )
 
 const (
@@ -555,4 +556,12 @@ func CheckAndStopService(s *Service) (err error) {
 	LoadedServices[s.Name].State = Stopped
 	clog.Info("Service %s stopped", s.Name)
 	return err
+}
+
+func (s Service) IsService() bool {
+	return strings.HasSuffix(string(s.Name), ".service")
+}
+
+func (s Service) IsTarget() bool {
+	return strings.HasSuffix(string(s.Name), ".target")
 }
