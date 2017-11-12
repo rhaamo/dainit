@@ -166,7 +166,7 @@ func StartServices() {
 	for _, services := range StartupServices {
 		wg.Add(len(services))
 		for _, s := range services {
-			lS := LoadedServices[s.Name]
+			lS := LoadedServices[s]
 			go func(s *Service) {
 				// TODO: This should ensure that Needs are satisfiable instead of getting into an
 				// infinite loop when they're not.
@@ -186,7 +186,7 @@ func StartServices() {
 						go s.StartSimple()
 					} else {
 						// What are you doing here ?
-						clog.Warn("I don't know why but I'm asked to start %s with type %s\n", s.Name, s.Type)
+						clog.Warn("I don't know why but I'm asked to start %s with type %s", s.Name, s.Type)
 					}
 				}
 
@@ -363,6 +363,14 @@ func (s Service) NeedsSatisfied(started map[ServiceType]bool, mu *sync.RWMutex) 
 		}
 	}
 	return true
+}
+
+func (s Service) IsService() bool {
+	return strings.HasSuffix(string(s.Name), ".service")
+}
+
+func (s Service) IsTarget() bool {
+	return strings.HasSuffix(string(s.Name), ".target")
 }
 
 func getProcessPid(s *Service) (pid int, err error) {
@@ -558,10 +566,143 @@ func CheckAndStopService(s *Service) (err error) {
 	return err
 }
 
-func (s Service) IsService() bool {
-	return strings.HasSuffix(string(s.Name), ".service")
-}
+func SortServicesForBoot() (err error) {
+	// First step is to sort targets
+	graphTargets := goraph.NewGraph()
+	// Add target nodes
+	for _, s := range LoadedServices {
+		if s.IsTarget() {
+			node := goraph.NewNode(string(s.Name))
+			s.Node = node.ID()
+			ok := graphTargets.AddNode(node)
+			if ok {
+				clog.Trace("[target] Added node '%s'", s.Name)
+			} else {
+				clog.Error(2, "[target] Cannot add node '%s': node already exists", s.Name)
+			}
+		}
+	}
 
-func (s Service) IsTarget() bool {
-	return strings.HasSuffix(string(s.Name), ".target")
+	// Add target edges
+	for _, s := range LoadedServices {
+		if !s.IsTarget() {
+			continue // ignore anything is not a target
+		}
+		// WantedBy
+		if s.WantedBy != "" {
+			err = graphTargets.AddEdge(LoadedServices[ServiceName(s.WantedBy)].Node, s.Node, 100)
+			if err == nil {
+				clog.Trace("[target] Added WantedBy edge from '%s' to '%s'", s.WantedBy, s.Name)
+			} else {
+				clog.Error(2, "[target] Cannot add WantedBy edge from '%s' to '%s': %s", s.WantedBy, s.Name, err)
+			}
+		}
+
+		// After
+		for _, aft := range s.After {
+			err = graphTargets.AddEdge(LoadedServices[ServiceName(aft)].Node, s.Node, 100)
+			if err == nil {
+				clog.Trace("[target] Added After edge from '%s' to '%s'", aft, s.Name)
+			} else {
+				clog.Error(2, "[target] Cannot add After edge from '%s' to '%s': %s", aft, s.Name, err)
+			}
+		}
+		// Before
+		for _, bf := range s.Before {
+			err = graphTargets.AddEdge(s.Node, LoadedServices[ServiceName(bf)].Node, 100)
+			if err == nil {
+				clog.Trace("[target] Added Before edge from '%s' to '%s'", s.Name, bf)
+			} else {
+				clog.Error(2, "[target] Cannot add Before edge from '%s' to '%s': %s", s.Name, bf, err)
+			}
+		}
+		// Requires
+		for _, req := range s.Requires {
+			err := graphTargets.AddEdge(LoadedServices[ServiceName(req)].Node, s.Node, 100)
+			if err == nil {
+				clog.Trace("[target] Added Require edge from '%s' to '%s'", req, s.Name)
+			} else {
+				clog.Error(2,"[target] Cannot add Require edge from '%s' to '%s': %s", req, s.Name, err)
+			}
+		}
+	}
+
+	// sort
+	listTargets, ok := goraph.TopologicalSort(graphTargets)
+	if !ok {
+		clog.Error(2, "Cycle detected :(")
+		return fmt.Errorf("cycle detected")
+	}
+
+	// For each target, process services
+	for _, target := range listTargets {
+		// Add target to ordered slice
+		StartupTargets = append(StartupTargets, ServiceName(target.String()))
+
+		// Now for this target, process services
+		graphServices := goraph.NewGraph()
+		// Add service nodes
+		for _, v := range LoadedServices {
+			if !v.IsService() || v.WantedBy != target.String() {
+				continue
+			}
+			node := goraph.NewNode(string(v.Name))
+			v.Node = node.ID()
+			ok := graphServices.AddNode(node)
+			if ok {
+				clog.Trace("[service] Added node '%s'", v.Name)
+			} else {
+				clog.Error(2, "[service] Cannot add node '%s': node already exists", v.Name)
+			}
+		}
+
+		// Add service edges
+		for _, v := range LoadedServices {
+			if !v.IsService() || v.WantedBy != target.String() {
+				continue
+			}
+			// After
+			for _, aft := range v.After {
+				err = graphServices.AddEdge(LoadedServices[ServiceName(aft)].Node, v.Node, 100)
+				if err == nil {
+					clog.Trace("[service] Added After edge from '%s' to '%s'", aft, v.Name)
+				} else {
+					clog.Error(2, "[service] Cannot add After edge from '%s' to '%s': %s", aft, v.Name, err)
+				}
+			}
+			// Before
+			for _, bf := range v.Before {
+				err = graphServices.AddEdge(v.Node, LoadedServices[ServiceName(bf)].Node, 100)
+				if err == nil {
+					clog.Trace("[service] Added Before edge from '%s' to '%s'", v.Name, bf)
+				} else {
+					clog.Error(2, "[service] Cannot add Before edge from '%s' to '%s': %s", v.Name, bf, err)
+				}
+			}
+			// Requires
+			for _, req := range v.Requires {
+				err := graphServices.AddEdge(LoadedServices[ServiceName(req)].Node, v.Node, 100)
+				if err == nil {
+					clog.Trace("[service] Added Require edge from '%s' to '%s'", req, v.Name)
+				} else {
+					clog.Error(2, "[service] Cannot add Require edge from '%s' to '%s': %s", req, v.Name, err)
+				}
+			}
+		}
+
+		// sort
+		listServices, ok := goraph.TopologicalSort(graphServices)
+		if !ok {
+			clog.Error(2, "Cycle detected :(")
+			return fmt.Errorf("cycle detected")
+		}
+
+		for _, s := range listServices {
+			StartupServices[ServiceName(target.String())] = append(
+				StartupServices[ServiceName(target.String())],
+				ServiceName(s.String()))
+		}
+	}
+
+	return nil
 }
