@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/go-clog/clog"
-	"github.com/rhaamo/lutrainit/lutrainit/tools"
-	"github.com/rhaamo/lutrainit/shared/ipc"
+	"dev.sigpipe.me/dashie/lutrainit/lutrainit/tools"
+	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"github.com/valyala/gorpc"
 	"os"
 	"runtime"

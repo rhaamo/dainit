@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/go-clog/clog"
 	"github.com/go-ini/ini"
-	"github.com/rhaamo/lutrainit/shared/ipc"
+	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"io/ioutil"
 	"strings"
 	"time"

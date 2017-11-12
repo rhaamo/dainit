@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/rhaamo/lutrainit/shared/ipc"
+	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"github.com/urfave/cli"
 )
 
