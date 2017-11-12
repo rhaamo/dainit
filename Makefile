@@ -1,61 +1,69 @@
-LDFLAGS += -X "main.LutraBuildTime=$(shell date -u '+%Y-%m-%d %I:%M:%S %Z')"
-LDFLAGS += -X "main.LutraBuildGitHash=$(shell git rev-parse HEAD)"
+.PHONY: build
 
-OS := $(shell uname)
+build: build-lutrainit build-lutractl
+build-lutrainit:
+	$(MAKE) -C lutrainit build
 
-TAGS=
-GOVET=go tool vet -composites=false -methods=false -structtags=false
+build-lutractl:
+	$(MAKE) -C lutractl build
 
-.PHONY: build clean
+build-race: build-race-lutrainit build-race-lutractl
+build-race-lutrainit:
+	$(MAKE) -C lutrainit build-race
 
-all: build
+build-race-lutractl:
+	$(MAKE) -C lutractl build-race
 
-check: test
+vet: vet-lutrainit vet-lutractl
+vet-lutrainit:
+	$(MAKE) -C lutrainit vet
 
-govet:
-	$(GOVET) */*.go
+vet-lutractl:
+	$(MAKE) -C lutractl vet
 
-init:
-	@echo "Building init"
-	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+clean: clean-lutrainit clean-lutractl
+clean-lutrainit:
+	$(MAKE) -C lutrainit clean
 
-ctl:
-	@echo "Building client"
-	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+clean-lutractl:
+	$(MAKE) -C lutractl clean
 
-init-race:
-	@echo "Building init"
-	cd lutrainit && GOOS=linux GOARCH=amd64 go build -o lutrainit -race -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+test: test-lutrainit test-lutractl
+test-lutrainit:
+	$(MAKE) -C lutrainit test
 
-ctl-race:
-	@echo "Building client"
-	cd lutractl && GOOS=linux GOARCH=amd64 go build -o lutractl -race -ldflags '$(LDFLAGS)' -tags '$(TAGS)'
+test-lutractl:
+	$(MAKE) -C lutractl test
 
-build: init ctl
+misspell-check: misspell-check-lutrainit misspell-check-lutractl
+misspell-check-lutrainit:
+	$(MAKE) -C lutrainit misspell-check
 
-build-race: init-race ctl-race
+misspell-check-lutractl:
+	$(MAKE) -C lutractl misspell-check
 
-build-dev: govet
-	go build -o lutrainit -v -tags '$(TAGS)' $$(go list ./... | grep -v /vendor/)
+fmt-check: fmt-check-lutrainit fmt-check-lutractl
+fmt-check-lutrainit:
+	$(MAKE) -C lutrainit fmt-check
 
-build-dev-race: govet
-	go build -o lutrainit -v -race -tags '$(TAGS)' $$(go list ./... | grep -v /vendor/)
+fmt-check-lutractl:
+	$(MAKE) -C lutractl fmt-check
 
-clean:
-	find . -name ".DS_Store" -delete
-	go clean -i ./...
+fmt: fmt-lutrainit fmt-lutractl
+fmt-lutrainit:
+	$(MAKE) -C lutrainit fmt
 
-test-init:
-	cd lutrainit && go test -cover -race $$(go list ./... | grep -v /vendor/)
+fmt-lutractl:
+	$(MAKE) -C lutractl fmt
 
-test-ctl:
-	cd lutractl && go test -cover -race $$(go list ./... | grep -v /vendor/)
+lint: lint-lutrainit lint-lutractl
+lint-lutrainit:
+	$(MAKE) -C lutrainit lint
 
-test: test-init test-ctl
+lint-lutractl:
+	$(MAKE) -C lutractl lint
 
-lint:
-	golint $$(go list ./... | grep -v /vendor/)
-
+## Other targets
 install:
 	install -m 0755 -p lutrainit/lutrainit /lutrainit
 	install -m 0755 -p lutractl/lutractl /usr/bin/lutractl
@@ -77,3 +85,4 @@ docker-run: docker-build
 
 docker-rm:
 	docker rm lutrainit
+
