@@ -1,0 +1,43 @@
+workspace:
+  base: /srv/app
+  path: src/dev.sigpipe.me/dashie/lutrainit
+
+clone:
+  git:
+    image: plugins/git:1
+    depth: 50
+    tags: true
+
+pipeline:
+  test:
+    image: webhippie/golang:edge
+    pull: true
+    environment:
+      GOPATH: /srv/app
+    commands:
+      - make test
+    when:
+      event: [ push, tag, pull_request ]
+
+  build:
+    image: webhippie/golang:edge
+    pull: true
+    environment:
+      GOPATH: /srv/app
+    commands:
+      - make clean
+      - make vet
+      - make lint
+      - make misspell-check
+      - make build
+    when:
+      event: [ push, tag, pull_request ]
+
+  notify:
+    image: plugins/slack
+    channel: gitea
+    secrets:
+      - SLACK_WEBHOOK
+    when:
+      event: [ push, tag, pull_request ]
+      status: [ changed, failure, success ]
