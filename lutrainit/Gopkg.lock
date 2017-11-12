@@ -64,12 +64,6 @@
   revision = "febf2d34b54a69ce7530036c7503b1c9fbfdf0bb"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/rhaamo/lutrainit"
-  packages = ["shared/ipc"]
-  revision = "14d1dc6f249589318ab288dab3f4d8f197f77593"
-
-[[projects]]
   name = "github.com/smartystreets/assertions"
   packages = [".","internal/go-render/render","internal/oglematchers"]
   revision = "4ea54c1f28ad3ae597e76607dea3871fa177e263"
@@ -97,15 +91,9 @@
   packages = ["unix"]
   revision = "e24f485414aeafb646f6fca458b0bf869c0880a1"
 
-[[projects]]
-  branch = "master"
-  name = "pault.ag/go/topsort"
-  packages = ["."]
-  revision = "f98d2ad46e1adcbf8fa59a95a3b5509a7da9c6b5"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dbe1fb8a189c5a1d8c9dd325084ea046b810cb385ca8682502f4d391aba61b05"
+  inputs-digest = "07dffed2ac0210c8a65e77131def219de17ade1038db897fd44f2d21eb0edd82"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/rhaamo/lutrainit"
-  packages = ["shared/ipc"]
-  revision = "14d1dc6f249589318ab288dab3f4d8f197f77593"
-
-[[projects]]
   name = "github.com/urfave/cli"
   packages = ["."]
   revision = "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
@@ -22,6 +16,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dd02301d2a3ae0ce1b6d2419fe10b35e7d9a806622c23060b537d42abf5f3546"
+  inputs-digest = "9f8aa30e218498de2554ad1193356c2145cf400a79ab8f8c1ad24501f5f983b5"
   solver-name = "gps-cdcl"
   solver-version = 1

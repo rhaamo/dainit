@@ -40,10 +40,6 @@
   name = "github.com/olekukonko/tablewriter"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/rhaamo/lutrainit"
-
-[[constraint]]
   name = "github.com/smartystreets/goconvey"
   version = "1.6.2"
 

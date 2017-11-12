@@ -22,10 +22,6 @@
 
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/rhaamo/lutrainit"
-
-[[constraint]]
   name = "github.com/urfave/cli"
   version = "1.19.1"
 
