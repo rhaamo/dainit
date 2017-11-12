@@ -146,8 +146,12 @@ func dumpServicesList(ctx *cli.Context) error {
 
 	data := [][]string{}
 	for _, service := range LoadedServices {
+		if !service.IsService() {
+			continue
+		}
 		data = append(data, []string{
 			string(service.Name),
+			string(service.WantedBy),
 			service.Type,
 			strings.Join(service.Requires, ","),
 			strings.Join(service.After, ","),
@@ -156,7 +160,7 @@ func dumpServicesList(ctx *cli.Context) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"name", "type", "requires", "after", "before"})
+	table.SetHeader([]string{"name", "target", "type", "requires", "after", "before"})
 
 	for _, v := range data {
 		table.Append(v)
