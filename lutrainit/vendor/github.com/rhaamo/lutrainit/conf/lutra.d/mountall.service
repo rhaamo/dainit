@@ -1,0 +1,9 @@
+Name: mountall
+Description: Mount all filesystems
+Type: oneshot
+Autostart: true
+
+Startup: mount -a -t nonfs,nonfs4,nosmbfs,nocifs,nocodafs,noncpfs,noshfs,nofuse,nofuseblk,noglusterfs,nodavfs,nofuse.glusterfs -O no_netdev
+
+Provides: mountall
+Needs: premount

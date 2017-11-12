@@ -1,0 +1,12 @@
+Name: dbus
+Description: system message bus
+Type: forking
+Autostart: true
+
+ExecPreStart: /usr/bin/dbus-uuidgen --ensure && mkdir /var/run/dbus && chown messagebus:messagebus /var/run/dbus
+Startup: start-stop-daemon --start --quiet --pidfile /var/run/dbus/pid --exec /usr/bin/dbus-daemon -- --system
+Shutdown: start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile /var/run/dbus/pid --user messagebus
+PIDFile: /var/run/dbus/pid
+
+Provides: dbus
+Requires: devfs
