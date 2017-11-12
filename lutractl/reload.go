@@ -29,7 +29,7 @@ func doReload(ctx *cli.Context) error {
 	if resIpc.Err {
 		println("Reload error:", resIpc.ErrStr)
 	} else {
-		println("Reload successfull.")
+		println("Reload successful.")
 	}
 
 	return err

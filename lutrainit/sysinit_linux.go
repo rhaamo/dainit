@@ -76,7 +76,7 @@ func sysinit(ctx *cli.Context) error {
 	}
 
 	// First of all, we need to be sure we have a correct PATH setted
-	// This is usefull if we use lutrainit in an initramfs since PATH would be unset
+	// This is useful if we use lutrainit in an initramfs since PATH would be unset
 	curEnvPath := os.Getenv("PATH")
 	if len(strings.TrimSpace(curEnvPath)) == 0 {
 		os.Setenv("PATH", "/usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin")
@@ -98,7 +98,7 @@ func sysinit(ctx *cli.Context) error {
 	go socketInitctl()
 
 	if !MainConfig.StartedReexec {
-		// Mount local filesytems
+		// Mount local filesystems
 		// This have been moved in a .service file for now
 		//clog.Info("[lutra] Mounting local file systems")
 		//MountAllExcept(NetFs)

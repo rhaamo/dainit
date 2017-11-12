@@ -116,7 +116,7 @@ type StartupService struct {
 	Needs    []ServiceType
 }
 
-// Service represents a struct with usefull infos used for management of services
+// Service represents a struct with useful infos used for management of services
 type Service struct {
 	Name      ServiceName
 	AutoStart bool
@@ -402,7 +402,7 @@ func processAliveByPid(pid int) (alive bool, err error) {
 	return true, nil
 }
 
-// returns true if command successfull, else always false
+// returns true if command successful, else always false
 func processAliveByCmd(command string) (alive bool, err error) {
 	cmd := exec.Command("sh", "-c", command)
 
