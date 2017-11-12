@@ -1,38 +1,37 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	//"github.com/rhaamo/lutrainit/shared/ipc"
 	"errors"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"fmt"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/urfave/cli"
 )
 
 // CmdStart CLI object
-var CmdStart = cli.Command {
-	Name: "start",
-	Usage: "Start process",
+var CmdStart = cli.Command{
+	Name:        "start",
+	Usage:       "Start process",
 	Description: "Start process",
-	Action: doStart,
-	Flags: []cli.Flag{},
+	Action:      doStart,
+	Flags:       []cli.Flag{},
 }
 
 // CmdStop CLI object
-var CmdStop = cli.Command {
-	Name: "stop",
-	Usage: "Stop process",
+var CmdStop = cli.Command{
+	Name:        "stop",
+	Usage:       "Stop process",
 	Description: "Stop process",
-	Action: doStop,
-	Flags: []cli.Flag{},
+	Action:      doStop,
+	Flags:       []cli.Flag{},
 }
 
 // CmdRestart CLI obkect
-var CmdRestart = cli.Command {
-	Name: "restart",
-	Usage: "Restart process",
+var CmdRestart = cli.Command{
+	Name:        "restart",
+	Usage:       "Restart process",
 	Description: "Restart process",
-	Action: doRestart,
-	Flags: []cli.Flag{},
+	Action:      doRestart,
+	Flags:       []cli.Flag{},
 }
 
 func doStart(ctx *cli.Context) error {
