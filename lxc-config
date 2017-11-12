@@ -1,0 +1,19 @@
+lxc.include = /usr/share/lxc/config/debian.common.conf
+lxc.include = /var/lib/lxc/common.conf
+
+lxc.cgroup.memory.limit_in_bytes = 256M
+lxc.cgroup.memory.memsw.limit_in_bytes = 512M
+
+lxc.network.ipv4 = 10.0.0.123/24
+lxc.network.ipv4.gateway = 10.0.0.100
+
+lxc.rootfs = /var/lib/lxc/j-dev-lutrainit/rootfs
+
+# Container specific configuration
+lxc.mount = /var/lib/lxc/j-dev-lutrainit/fstab
+lxc.utsname = j-dev-lutrainit
+lxc.arch = amd64
+lxc.autodev = 1
+lxc.kmsg = 0
+lxc.tty = 8
+

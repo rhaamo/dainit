@@ -68,3 +68,12 @@ install-sample-conf:
 	install -m 0755 -p conf/lutra.d/network.eth0.service /etc/lutrainit/lutra.d/
 	install -m 0755 -p conf/lutra.d/udev.service /etc/lutrainit/lutra.d/
 	install -m 0755 -p conf/lutra.d/wpa_supplicant.service /etc/lutrainit/lutra.d/
+
+docker-build: build
+	docker build -t dashie/lutrainit:latest .
+
+docker-run: docker-build
+	docker run --entrypoint /usr/local/bin/lutrainit --name lutrainit dashie/lutrainit:latest 
+
+docker-rm:
+	docker rm lutrainit
