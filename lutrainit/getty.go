@@ -62,7 +62,7 @@ func waitAndSpawnGettys() {
 
 	wg.Add(len(GettysList))
 	for idx, getty := range GettysList {
-		go func(followGetty *FollowGetty) {
+		go func(followGetty *FollowGetty, idx int) {
 			defer wg.Done()
 			for {
 				if followGetty.Managed {
@@ -80,7 +80,7 @@ func waitAndSpawnGettys() {
 				}
 
 			}
-		}(getty)
+		}(getty, idx)
 	}
 	wg.Wait()
 }
