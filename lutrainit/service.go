@@ -365,10 +365,12 @@ func (s Service) NeedsSatisfied(started map[ServiceType]bool, mu *sync.RWMutex) 
 	return true
 }
 
+// IsService or not
 func (s Service) IsService() bool {
 	return strings.HasSuffix(string(s.Name), ".service")
 }
 
+// IsTarget or not
 func (s Service) IsTarget() bool {
 	return strings.HasSuffix(string(s.Name), ".target")
 }
@@ -566,6 +568,7 @@ func CheckAndStopService(s *Service) (err error) {
 	return err
 }
 
+// SortServicesForBoot will sort in the slice and map for targets and services, all ordered
 func SortServicesForBoot() (err error) {
 	// First step is to sort targets
 	graphTargets := goraph.NewGraph()

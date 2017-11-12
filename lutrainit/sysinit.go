@@ -5,6 +5,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// CmdSysinit cli command
 var CmdSysinit = cli.Command {
 	Name: "sysinit",
 	Usage: "Sysinit",

@@ -18,10 +18,12 @@ var (
 	// StartupServices Should only be used for the FIRST startup
 	// StartupServices is the in-memory map list of processes started on a full-start boot
 	StartupServices = make(map[ServiceName][]ServiceName)
+	// StartupTargets ordered slice
 	StartupTargets = make([]ServiceName, 0)
 
 	// LoadedServices is used for any other actions, start, stop, etc.
 	LoadedServices   = make(map[ServiceName]*Service)
+	// LoadedServicesMu tex to avoid issues
 	LoadedServicesMu = sync.RWMutex{}
 
 	// NetFs design the list of known network file systems to be avoided mounted at boot
@@ -68,6 +70,7 @@ func main() {
 	app.Run(os.Args)
 }
 
+// CmdServicesTree cli command
 var CmdServicesTree = cli.Command{
 	Name:        "services-tree",
 	Usage:       "List the services tree",
@@ -114,6 +117,7 @@ func dumpServicesTree(ctx *cli.Context) error {
 	return nil
 }
 
+// CmdServicesList cli command
 var CmdServicesList = cli.Command{
 	Name:        "services-list",
 	Usage:       "List the services list",

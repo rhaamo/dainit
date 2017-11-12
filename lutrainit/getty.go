@@ -15,6 +15,7 @@ var (
 
 	// GettysList of managed or unmanaged
 	GettysList 		= make(map[int]*FollowGetty)
+	// GettysListMu tex to avoid issues
 	GettysListMu	= sync.RWMutex{}
 )
 
