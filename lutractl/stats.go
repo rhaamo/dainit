@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
+	"fmt"
 	"github.com/urfave/cli"
 )
 

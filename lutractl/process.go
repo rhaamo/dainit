@@ -1,9 +1,9 @@
 package main
 
 import (
+	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"errors"
 	"fmt"
-	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"github.com/urfave/cli"
 )
 

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"github.com/go-clog/clog"
 	"dev.sigpipe.me/dashie/lutrainit/lutrainit/tools"
 	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
+	"fmt"
+	"github.com/go-clog/clog"
 	"github.com/valyala/gorpc"
 	"os"
 	"runtime"

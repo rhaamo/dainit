@@ -1,10 +1,10 @@
 package main
 
 import (
+	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"fmt"
 	"github.com/go-clog/clog"
 	"github.com/go-ini/ini"
-	"dev.sigpipe.me/dashie/lutrainit/shared/ipc"
 	"io/ioutil"
 	"strings"
 	"time"
