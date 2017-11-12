@@ -1,5 +1,7 @@
 # lutrainit
 
+Main repository at https://dev.sigpipe.me/dashie/lutrainit
+
 lutrainit is an init system for Linux written in Go.
 
 lutrainit will do the following:
