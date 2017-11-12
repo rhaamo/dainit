@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-clog/clog"
+	"github.com/mitchellh/go-ps"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"syscall"
 	"time"
-	"github.com/mitchellh/go-ps"
-	"github.com/go-clog/clog"
 )
 
 // Waits up to a minute for all processes to die.
@@ -114,7 +114,6 @@ func getAllProcesses() ([]*os.Process, error) {
 	}
 	return rprocs, nil
 }
-
 
 func doShutdown(reboot bool) {
 	ShuttingDown = true

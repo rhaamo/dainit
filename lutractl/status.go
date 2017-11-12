@@ -1,19 +1,19 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"fmt"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/urfave/cli"
 	"time"
 )
 
 // CmdStatus CLI object
-var CmdStatus = cli.Command {
-	Name: "status",
-	Usage: "Shows init processes status",
+var CmdStatus = cli.Command{
+	Name:        "status",
+	Usage:       "Shows init processes status",
 	Description: "Shows init processes status",
-	Action: getStatus,
-	Flags: []cli.Flag{},
+	Action:      getStatus,
+	Flags:       []cli.Flag{},
 }
 
 func getStatus(ctx *cli.Context) error {
@@ -46,7 +46,7 @@ func getStatus(ctx *cli.Context) error {
 			fmt.Printf("WARNING: This service init have been deleted from configuration directory.\n")
 		}
 		fmt.Printf("Status: %s\n", loadedService.State.String())
-		if loadedService.Type == "simple" && loadedService.State == ipc.Started && loadedService.LastKnownPID >= 2{
+		if loadedService.Type == "simple" && loadedService.State == ipc.Started && loadedService.LastKnownPID >= 2 {
 			fmt.Printf("Lask known PID: %d\n", loadedService.LastKnownPID)
 		}
 		lastActionAt := time.Unix(loadedService.LastActionAt, 0).Format(time.RFC1123Z)

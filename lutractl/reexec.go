@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/urfave/cli"
 	"errors"
 	"fmt"
+	"github.com/urfave/cli"
 )
 
 // CmdReexec CLI object
-var CmdReexec = cli.Command {
-	Name: "reexec",
-	Usage: "Re-exec init daemon",
+var CmdReexec = cli.Command{
+	Name:        "reexec",
+	Usage:       "Re-exec init daemon",
 	Description: "Re-exec init daemon",
-	Action: doReexec,
-	Flags: []cli.Flag{},
+	Action:      doReexec,
+	Flags:       []cli.Flag{},
 }
 
 func doReexec(ctx *cli.Context) error {

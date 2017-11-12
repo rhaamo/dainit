@@ -6,12 +6,12 @@ import (
 )
 
 // CmdSysinit cli command
-var CmdSysinit = cli.Command {
-	Name: "sysinit",
-	Usage: "Sysinit",
+var CmdSysinit = cli.Command{
+	Name:        "sysinit",
+	Usage:       "Sysinit",
 	Description: "Sysinit",
-	Action: sysinit,
-	Flags: []cli.Flag{},
+	Action:      sysinit,
+	Flags:       []cli.Flag{},
 }
 
 func setupLogging(withFile bool) (err error) {

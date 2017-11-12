@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"fmt"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/urfave/cli"
 )
 
 // CmdVersion CLI object
-var CmdVersion = cli.Command {
-	Name: "version",
-	Usage: "Shows init version",
+var CmdVersion = cli.Command{
+	Name:        "version",
+	Usage:       "Shows init version",
 	Description: "Shows init version",
-	Action: getVersion,
-	Flags: []cli.Flag{},
+	Action:      getVersion,
+	Flags:       []cli.Flag{},
 }
 
 func getVersion(ctx *cli.Context) error {

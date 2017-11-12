@@ -1,16 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
+	"fmt"
+	"github.com/go-clog/clog"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
-	"github.com/go-clog/clog"
 	"syscall"
-	"fmt"
-	"encoding/gob"
-	"bytes"
-	"github.com/urfave/cli"
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -49,7 +49,8 @@ func sysinit(ctx *cli.Context) error {
 	reexec := os.Getenv("LUTRAINIT_REEXECING")
 	MainConfig.StartedReexec = reexec == "true"
 
-	err := setupLogging(false); if err != nil {
+	err := setupLogging(false)
+	if err != nil {
 		println("[lutra] Error: This is going bad, could not setup logging", err.Error())
 		// we have no choice
 		// PANIC PANIC PANIC

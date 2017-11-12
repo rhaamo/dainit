@@ -2,31 +2,31 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"github.com/go-clog/clog"
-	"strings"
-	"github.com/rhaamo/lutrainit/shared/ipc"
-	"time"
 	"github.com/go-ini/ini"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"io/ioutil"
+	"strings"
+	"time"
 )
 
 var (
 	// MainConfig of the daemon
 	MainConfig struct {
-		Persist		bool
-		Autologins	[]string
+		Persist    bool
+		Autologins []string
 
 		Log struct {
-			Filename 	string
-			Rotate   	bool
-			Daily   	bool
-			MaxSize	 	int
-			MaxLines 	int64
-			MaxDays  	int64
-			BufferLen	int64
+			Filename  string
+			Rotate    bool
+			Daily     bool
+			MaxSize   int
+			MaxLines  int64
+			MaxDays   int64
+			BufferLen int64
 		}
 
-		StartedReexec	bool
+		StartedReexec bool
 	}
 )
 
@@ -36,21 +36,20 @@ pidfile
 type
 autostart
 execprestart...
- */
+*/
 
 // ParseConfig a single config file into the services it provides
 func ParseConfig(baseDir string, fname string) (Service, error) {
 	s := Service{
-		Deleted: false,
+		Deleted:   false,
 		AutoStart: true,
-		Filename: fname,
-		Name: ServiceName(fname),
+		Filename:  fname,
+		Name:      ServiceName(fname),
 	}
 
-	if ! ipc.IsCustASCII(fname) {
+	if !ipc.IsCustASCII(fname) {
 		return s, fmt.Errorf("%s has invalid service name '%s', only a-Z0-9_-. allowed", fname, s.Name)
 	}
-
 
 	Cfg, err := ini.InsensitiveLoad(fmt.Sprintf("%s/lutra.d/%s", baseDir, fname))
 	if err != nil {
@@ -202,7 +201,7 @@ func ReloadConfig(reloading bool, baseDir string, withFile bool) (err error) {
 	}
 
 	if err := ParseSetupConfig(fmt.Sprintf("%s/lutra.conf", baseDir)); err != nil {
-		clog.Error(2,"[lutra] Failed to parse Main Configuration: %s", err.Error())
+		clog.Error(2, "[lutra] Failed to parse Main Configuration: %s", err.Error())
 		return err
 	}
 	clog.Info("Main config parsed.")

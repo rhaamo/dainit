@@ -1,19 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/go-clog/clog"
+	"github.com/gyuho/goraph"
+	"github.com/mitchellh/go-ps"
+	"io/ioutil"
 	"os"
 	"os/exec"
-	"sync"
-	"time"
-	"github.com/go-clog/clog"
-	"io/ioutil"
 	"strconv"
-	"bytes"
-	"github.com/mitchellh/go-ps"
-	"syscall"
-	"github.com/gyuho/goraph"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 )
 
 const (
@@ -109,52 +109,52 @@ func (c Command) String() string {
 
 // StartupService is a lightweight service used only for startup loop
 type StartupService struct {
-	Name		ServiceName
-	AutoStart	bool
+	Name      ServiceName
+	AutoStart bool
 
-	Provides 	[]ServiceType
-	Needs    	[]ServiceType
+	Provides []ServiceType
+	Needs    []ServiceType
 }
 
 // Service represents a struct with usefull infos used for management of services
 type Service struct {
-	Name		ServiceName
-	AutoStart	bool
+	Name      ServiceName
+	AutoStart bool
 
-	Provides 	[]ServiceType
-	Needs    	[]ServiceType
+	Provides []ServiceType
+	Needs    []ServiceType
 
-	Description		string		// Currently not used
-	State			RunState
+	Description string // Currently not used
+	State       RunState
 
-	LastAction		LastAction
-	LastActionAt	int64		// Timestamp of the last action (UTC)
-	LastMessage		string
-	LastKnownPID	int
+	LastAction   LastAction
+	LastActionAt int64 // Timestamp of the last action (UTC)
+	LastMessage  string
+	LastKnownPID int
 
-	Type			string // forking or simple
-	PIDFile			string
+	Type    string // forking or simple
+	PIDFile string
 
-	Startup  	Command
-	Shutdown 	Command
+	Startup  Command
+	Shutdown Command
 
-	ExecPreStart	Command
-	ExecStart		Command
-	ExecPostStart	Command
-	ExecPreStop		Command
-	ExecStop		Command
-	ExecPostStop	Command
+	ExecPreStart  Command
+	ExecStart     Command
+	ExecPostStart Command
+	ExecPreStop   Command
+	ExecStop      Command
+	ExecPostStop  Command
 
-	Deleted			bool
-	Filename		string
+	Deleted  bool
+	Filename string
 
 	// Topo dependencies
-	Requires		[]string
-	Before			[]string
-	After			[]string
-	WantedBy		string
+	Requires []string
+	Before   []string
+	After    []string
+	WantedBy string
 
-	Node			goraph.ID
+	Node goraph.ID
 }
 
 // StartServices starts all declared services at start
@@ -203,7 +203,7 @@ func StartServices() {
 }
 
 // Start the Service s. if type is oneshot or forking
-func(s Service) Start() error {
+func (s Service) Start() error {
 	LoadedServicesMu.Lock()
 	defer LoadedServicesMu.Unlock()
 
@@ -248,7 +248,7 @@ func(s Service) Start() error {
 		LoadedServices[s.Name].LastActionAt = time.Now().UTC().Unix()
 		LoadedServices[s.Name].LastAction = Start
 
-		clog.Error(2,"[lutra] Error starting service %s: %s", s.Name, err.Error())
+		clog.Error(2, "[lutra] Error starting service %s: %s", s.Name, err.Error())
 
 		return err
 	}
@@ -276,7 +276,7 @@ func(s Service) Start() error {
 
 // StartSimple and track the PID and process state (for simple service without auto-fork function)
 // Please remember that this function locks in the middle (cmd.Wait()) for any mutex operation
-func(s Service) StartSimple() {
+func (s Service) StartSimple() {
 	LoadedServicesMu.Lock()
 	s.State = Starting
 	LoadedServices[s.Name].State = Starting
@@ -301,7 +301,7 @@ func(s Service) StartSimple() {
 	cmd := exec.Command("sh", "-c", s.Startup.String())
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
-		clog.Error(2,"[lutra] Service %s exited with error: %s", s.Name, err.Error())
+		clog.Error(2, "[lutra] Service %s exited with error: %s", s.Name, err.Error())
 		LoadedServicesMu.Lock()
 		s.State = Errored
 		LoadedServices[s.Name].State = Errored
@@ -625,7 +625,7 @@ func SortServicesForBoot() (err error) {
 			if err == nil {
 				clog.Trace("[target] Added Require edge from '%s' to '%s'", req, s.Name)
 			} else {
-				clog.Error(2,"[target] Cannot add Require edge from '%s' to '%s': %s", req, s.Name, err)
+				clog.Error(2, "[target] Cannot add Require edge from '%s' to '%s': %s", req, s.Name, err)
 			}
 		}
 	}

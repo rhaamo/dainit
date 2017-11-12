@@ -1,19 +1,18 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"fmt"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/urfave/cli"
 )
 
-
 // CmdStats CLI object
-var CmdStats = cli.Command {
-	Name: "stats",
-	Usage: "Shows init stats",
+var CmdStats = cli.Command{
+	Name:        "stats",
+	Usage:       "Shows init stats",
 	Description: "Shows init stats",
-	Action: getStats,
-	Flags: []cli.Flag{},
+	Action:      getStats,
+	Flags:       []cli.Flag{},
 }
 
 func getStats(ctx *cli.Context) error {

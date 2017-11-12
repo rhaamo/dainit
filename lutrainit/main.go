@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli"
 	"github.com/valyala/gorpc"
@@ -8,7 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 	StartupTargets = make([]ServiceName, 0)
 
 	// LoadedServices is used for any other actions, start, stop, etc.
-	LoadedServices   = make(map[ServiceName]*Service)
+	LoadedServices = make(map[ServiceName]*Service)
 	// LoadedServicesMu tex to avoid issues
 	LoadedServicesMu = sync.RWMutex{}
 

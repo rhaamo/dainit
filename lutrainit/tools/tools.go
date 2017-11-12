@@ -1,9 +1,9 @@
 package tools
 
 import (
-	"time"
-	"strings"
 	"fmt"
+	"strings"
+	"time"
 )
 
 // Seconds-based time units
@@ -93,4 +93,3 @@ func TimeSincePro(then time.Time) string {
 	}
 	return strings.TrimPrefix(timeStr, ", ")
 }
-

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/go-clog/clog"
 	"os"
 	"strings"
-	"github.com/go-clog/clog"
 )
 
 // Remount a filesystem. Grub mounts / as ro during the boot process, and this will get it to

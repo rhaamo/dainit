@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/rhaamo/lutrainit/shared/ipc"
 	"github.com/urfave/cli"
+	"github.com/valyala/gorpc"
 	"os"
 	"os/user"
-	"github.com/valyala/gorpc"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 )
 
 var (
@@ -13,11 +13,11 @@ var (
 	LutraVersion = "0.1"
 
 	// GorpcDispatcher is the main dispatcher object
-	GorpcDispatcher			*gorpc.Dispatcher
+	GorpcDispatcher *gorpc.Dispatcher
 	// GorpcDispatcherClient is the client dispatcher object
-	GorpcDispatcherClient	*gorpc.DispatcherClient
+	GorpcDispatcherClient *gorpc.DispatcherClient
 	// GorpcClient is the main client object
-	GorpcClient				*gorpc.Client
+	GorpcClient *gorpc.Client
 
 	// Theses two last should only filled by LDFLAGS, see Makefile
 
@@ -27,13 +27,12 @@ var (
 	LutraBuildGitHash string
 )
 
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "lutractl"
 	app.Usage = "lutra init control client"
 	app.Version = LutraVersion
-	app.Commands = []cli.Command {
+	app.Commands = []cli.Command{
 		CmdVersion,
 		CmdStats,
 		CmdStatus,
@@ -67,7 +66,6 @@ func main() {
 	defer GorpcClient.Stop()
 
 	GorpcDispatcherClient = GorpcDispatcher.NewFuncClient(GorpcClient)
-
 
 	// Let's go baby
 	app.Run(os.Args)

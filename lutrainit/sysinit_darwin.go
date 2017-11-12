@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/urfave/cli"
 	"fmt"
+	"github.com/urfave/cli"
 )
 
 func sysinit(ctx *cli.Context) error {

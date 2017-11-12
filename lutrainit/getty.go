@@ -1,12 +1,12 @@
 package main
 
 import (
+	"github.com/go-clog/clog"
+	"github.com/mitchellh/go-ps"
 	"os"
 	"os/exec"
 	"sync"
 	"syscall"
-	"github.com/go-clog/clog"
-	"github.com/mitchellh/go-ps"
 )
 
 var (
@@ -14,17 +14,17 @@ var (
 	ttys = [11]string{"tty1", "tty2", "tty3", "tty4", "tty5", "tty6", "tty8", "tty9", "tty10", "tty11", "tty12"}
 
 	// GettysList of managed or unmanaged
-	GettysList 		= make(map[int]*FollowGetty)
+	GettysList = make(map[int]*FollowGetty)
 	// GettysListMu tex to avoid issues
-	GettysListMu	= sync.RWMutex{}
+	GettysListMu = sync.RWMutex{}
 )
 
 // FollowGetty struct with tracking infos
 type FollowGetty struct {
-	TTY			string
-	PID			int
-	Managed		bool
-	Autologin	string
+	TTY       string
+	PID       int
+	Managed   bool
+	Autologin string
 }
 
 // ManageGettys to deal with reexec
@@ -88,7 +88,8 @@ func waitAndSpawnGettys() {
 // Gettys spawn the number of ttys required for len(autologins) to login.
 // If persist is true, they'll be respawned if they die.
 func manageAndSpawnGettys() {
-	if MainConfig.StartedReexec {}
+	if MainConfig.StartedReexec {
+	}
 	autologins := MainConfig.Autologins
 
 	switch len(autologins) {

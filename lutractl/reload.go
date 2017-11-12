@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/urfave/cli"
-	"github.com/rhaamo/lutrainit/shared/ipc"
 	"errors"
+	"github.com/rhaamo/lutrainit/shared/ipc"
+	"github.com/urfave/cli"
 )
 
 // CmdReload CLI object
-var CmdReload = cli.Command {
-	Name: "reload",
-	Usage: "Reload init configs",
+var CmdReload = cli.Command{
+	Name:        "reload",
+	Usage:       "Reload init configs",
 	Description: "Reload init configs",
-	Action: doReload,
-	Flags: []cli.Flag{},
+	Action:      doReload,
+	Flags:       []cli.Flag{},
 }
 
 func doReload(ctx *cli.Context) error {
