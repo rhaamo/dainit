@@ -1,0 +1,12 @@
+[order]
+WantedBy=network.target
+#Requires=loopback.service,udev.service
+
+[service]
+Description=network connection manager
+Type=forking
+Autostart=true
+PIDFile=/var/run/NetworkManager/NetworkManager.pid
+
+ExecStart=start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
+ExecStop=start-stop-daemon --stop --retry 5 --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager

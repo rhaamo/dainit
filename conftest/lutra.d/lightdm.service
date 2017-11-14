@@ -1,0 +1,11 @@
+[order]
+WantedBy=multi-user.target
+
+[service]
+Description=Light Display Managed
+Type=forking
+Autostart=false
+
+ExecStart=start-stop-daemon --start --quiet --pidfile /var/run/lightdm.pid --name lightdm --startas /usr/sbin/lightdm -- -d
+ExecStop=start-stop-daemon --stop --quiet --pidfile /var/run/lightdm.pid --name lightdm --retry TERM/5/TERM/5
+PIDFile=/var/run/lightdm.pid
