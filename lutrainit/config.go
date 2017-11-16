@@ -159,6 +159,7 @@ func ParseServiceConfigs(baseDir string, reloading bool) error {
 			LoadedServices[s.Name].Shutdown = s.Shutdown
 			LoadedServices[s.Name].ExecPostStop = s.ExecPostStop
 			LoadedServices[s.Name].Type = s.Type
+			LoadedServices[s.Name].Requires = s.Requires
 		}
 
 	}
