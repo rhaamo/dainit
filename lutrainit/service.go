@@ -121,9 +121,6 @@ type Service struct {
 	Name      ServiceName
 	AutoStart bool
 
-	Provides []ServiceType
-	Needs    []ServiceType
-
 	Description string // Currently not used
 	State       RunState
 
@@ -158,24 +155,28 @@ type Service struct {
 }
 
 // StartServices starts all declared services at start
+// There were a mutex for Read and Write of the old StartedServices, we don't use that anymore
+// The LoadedServices does have his own mutex, used by the services's .Start/Stop etc. functions.
 func StartServices() {
-	wg := sync.WaitGroup{}
+	// Work target by target, one mutex waitgroup per target, one after another
+	for _, target := range StartupTargets {
+		wg := sync.WaitGroup{}
 
-	var startedMu = &sync.RWMutex{}
-	startedTypes := make(map[ServiceType]bool)
-	for _, services := range StartupServices {
-		wg.Add(len(services))
-		for _, s := range services {
-			lS := LoadedServices[s]
+		wg.Add(len(StartupServices[target])) // Add the number of services in this target to the waitgroup
+
+		// For each service, start them
+		for _, serviceName := range StartupServices[target] {
+			service := LoadedServices[serviceName] // this is the service to start
+
 			go func(s *Service) {
-				// TODO: This should ensure that Needs are satisfiable instead of getting into an
-				// infinite loop when they're not.
-				// (TODO(2): Prove N=NP in order to do the above efficiently.)
+				// TODO: This should ensure that Requires are satisfiable instead of getting into an
+				// infiniteloop when they're not.
+				// (TODO(2): Prove N=NP (P=NP no ?) in order to do the above efficiently.)
 				for satisfied, tries := false, 0; satisfied == false && tries < 60; tries++ {
-					satisfied = s.NeedsSatisfied(startedTypes, startedMu)
+					satisfied = s.RequiredSatisfied()
 					time.Sleep(2 * time.Second)
-
 				}
+
 				if s.State == NotStarted && s.AutoStart {
 					// Start the service
 					if s.Type == "oneshot" || s.Type == "forking" {
@@ -189,17 +190,11 @@ func StartServices() {
 						clog.Warn("I don't know why but I'm asked to start %s with type %s", s.Name, s.Type)
 					}
 				}
-
-				startedMu.Lock()
-				for _, t := range s.Provides {
-					startedTypes[t] = true
-				}
-				startedMu.Unlock()
 				wg.Done()
-			}(lS)
+			}(service)
 		}
+		wg.Wait() // Wait until all services are started in this target
 	}
-	wg.Wait()
 }
 
 // Start the Service s. if type is oneshot or forking
@@ -353,12 +348,10 @@ func (s Service) StartSimple() {
 
 }
 
-// NeedsSatisfied if all of s's needs are satified by the passed list of provided types
-func (s Service) NeedsSatisfied(started map[ServiceType]bool, mu *sync.RWMutex) bool {
-	mu.RLock()
-	defer mu.RUnlock()
-	for _, st := range s.Needs {
-		if !started[st] {
+// RequiredSatisfied if all of service required are satified
+func (s Service) RequiredSatisfied() bool {
+	for _, serviceRequired := range s.Requires {
+		if LoadedServices[ServiceName(serviceRequired)].State != Started {
 			return false
 		}
 	}

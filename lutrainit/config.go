@@ -150,8 +150,6 @@ func ParseServiceConfigs(baseDir string, reloading bool) error {
 
 			LoadedServices[s.Name].Deleted = false
 			LoadedServices[s.Name].Description = s.Description
-			LoadedServices[s.Name].Needs = s.Needs
-			LoadedServices[s.Name].Provides = s.Provides
 			LoadedServices[s.Name].AutoStart = s.AutoStart
 			LoadedServices[s.Name].PIDFile = s.PIDFile
 			LoadedServices[s.Name].ExecPreStart = s.ExecPreStart
