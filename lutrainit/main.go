@@ -148,23 +148,28 @@ func dumpServicesList(ctx *cli.Context) error {
 
 	time.Sleep(500 * time.Microsecond)
 
+	SortServicesForBoot()
+
 	data := [][]string{}
-	for _, service := range LoadedServices {
-		if !service.IsService() {
-			continue
+
+	for _, target := range StartupTargets {
+		targetDisplay := target // display the target only on the first occurence
+		for _, service := range StartupServices[target] {
+			s := LoadedServices[service]
+			data = append(data, []string{
+				string(targetDisplay),
+				string(s.Name),
+				s.Type,
+				strings.Join(s.Requires, ","),
+				strings.Join(s.After, ","),
+				strings.Join(s.Before, ","),
+			})
+			targetDisplay = ""
 		}
-		data = append(data, []string{
-			string(service.Name),
-			string(service.WantedBy),
-			service.Type,
-			strings.Join(service.Requires, ","),
-			strings.Join(service.After, ","),
-			strings.Join(service.Before, ","),
-		})
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"name", "target", "type", "requires", "after", "before"})
+	table.SetHeader([]string{"target", "name", "type", "requires", "after", "before"})
 
 	for _, v := range data {
 		table.Append(v)
