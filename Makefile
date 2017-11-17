@@ -1,7 +1,7 @@
 .PHONY: build
 
-PREFIX ?= /etc
-INSTDIR ?= ${PREFIX}/lutrainit
+PREFIX := /etc
+INSTDIR := ${PREFIX}/lutrainit
 
 build: build-lutrainit build-lutractl
 build-lutrainit:
@@ -86,8 +86,8 @@ install-sample-conf:
 	install -d -m 0755 ${INSTDIR}
 	install -d -m 0755 ${INSTDIR}/lutra.d
 	install -m 0755 -p conf/lutra.conf ${INSTDIR}/lutra.conf
-	for cfg in $CFGFILES; do \
-		install -m 0755 -p conf/lutra.d/${cfg} ${INSTDIR}/lutra.d/ ; \
+	for i in ${CFGFILES}; do \
+		install -m 0755 -p conf/lutra.d/$$i ${INSTDIR}/lutra.d/ ; \
 	done
 
 docker-build: build
