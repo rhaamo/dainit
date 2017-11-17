@@ -1,0 +1,6 @@
+[order]
+After=basic.target
+
+[service]
+Description=Disk target
+Type=virtual

@@ -1,0 +1,6 @@
+[order]
+Requires=network.target
+
+[service]
+Description=Multi User target
+Type=virtual

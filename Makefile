@@ -68,14 +68,24 @@ install:
 	install -m 0755 -p lutrainit/lutrainit /lutrainit
 	install -m 0755 -p lutractl/lutractl /usr/bin/lutractl
 
+CFGFILES =  basic.target \
+			dbus.service \
+			loopback.service \
+			mountall.service \
+			udev.service \
+			disk.target \
+			network.target \
+			network-manager.service \
+			multi-user.target \
+			lightdm.service
+
 install-sample-conf:
 	install -d -m 0755 /etc/lutrainit
-	install -d -m 0755 /etc/lutrainit.d
+	install -d -m 0755 /etc/lutrainit/lutra.d
 	install -m 0755 -p conf/lutra.conf /etc/lutrainit/lutra.conf
-	install -m 0755 -p conf/lutra.d/loopback.service /etc/lutrainit/lutra.d/
-	install -m 0755 -p conf/lutra.d/network.eth0.service /etc/lutrainit/lutra.d/
-	install -m 0755 -p conf/lutra.d/udev.service /etc/lutrainit/lutra.d/
-	install -m 0755 -p conf/lutra.d/wpa_supplicant.service /etc/lutrainit/lutra.d/
+	for cfg in $CFGFILES; do \
+		install -m 0755 -p conf/lutra.d/${cfg} /etc/lutrainit/lutra.d/ ; \
+	done
 
 docker-build: build
 	docker build -t dashie/lutrainit:latest .
