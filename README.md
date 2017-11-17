@@ -1,19 +1,17 @@
 # lutrainit
 
-Main repository at https://dev.sigpipe.me/dashie/lutrainit
+Main repository at <https://dev.sigpipe.me/dashie/lutrainit>
 
 lutrainit is an init system for Linux written in Go.
 
 lutrainit will do the following:
 
 1. Set the hostname
-2. Remount the root filesystem[1]
-3. Mount all other non-network filesystems and activate swap partitions
-3. Start processes with config files in /etc/lutrainit/lutra.d/ after their dependencies
-   ("Requires") are started. See `conf/` for a samples config.
-4. Start some TTY or anything other user-specified.
-5. Kill running processes, unmount filesystems, and poweroff the system once that last
-   login session ends.
++ Remount the root filesystem[1]
++ Mount all other non-network filesystems and activate swap partitions
++ Start processes with config files in /etc/lutrainit/lutra.d/ after their dependencies ("Requires") are started. See `conf/` for a samples config.
++ Start some TTY or anything other user-specified.
++ Kill running processes, unmount filesystems, and poweroff the system once that last login session ends.
 
 (The way step 4 is handled isn't very elegant and will likely fail if you have too
 many slow startup processes.)
@@ -32,7 +30,8 @@ See the `conf/` folder for what you can put in `/etc/lutrainit/` including servi
 A tool exists and communicate with the init daemon using RPC on socket `/run/ottersock`, it can then show init version, statistics about goroutines, memory, etc.
 
 ## Installation/Usage
-```
+
+```shell
 sudo cp lutrainit/lutrainit /sbin
 sudo cp lutractl/lutractl /sbin
 ```
