@@ -1,5 +1,8 @@
 .PHONY: build
 
+PREFIX ?= /etc
+INSTDIR ?= ${PREFIX}/lutrainit
+
 build: build-lutrainit build-lutractl
 build-lutrainit:
 	$(MAKE) -C lutrainit build
@@ -80,11 +83,11 @@ CFGFILES =  basic.target \
 			lightdm.service
 
 install-sample-conf:
-	install -d -m 0755 /etc/lutrainit
-	install -d -m 0755 /etc/lutrainit/lutra.d
-	install -m 0755 -p conf/lutra.conf /etc/lutrainit/lutra.conf
+	install -d -m 0755 ${INSTDIR}
+	install -d -m 0755 ${INSTDIR}/lutra.d
+	install -m 0755 -p conf/lutra.conf ${INSTDIR}/lutra.conf
 	for cfg in $CFGFILES; do \
-		install -m 0755 -p conf/lutra.d/${cfg} /etc/lutrainit/lutra.d/ ; \
+		install -m 0755 -p conf/lutra.d/${cfg} ${INSTDIR}/lutra.d/ ; \
 	done
 
 docker-build: build
