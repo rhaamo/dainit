@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli"
 	"github.com/valyala/gorpc"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -160,6 +161,7 @@ func dumpServicesList(ctx *cli.Context) error {
 				string(targetDisplay),
 				string(s.Name),
 				s.Type,
+				strconv.FormatBool(s.AutoStart),
 				strings.Join(s.Requires, ","),
 				strings.Join(s.After, ","),
 				strings.Join(s.Before, ","),
@@ -169,7 +171,7 @@ func dumpServicesList(ctx *cli.Context) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"target", "name", "type", "requires", "after", "before"})
+	table.SetHeader([]string{"target", "name", "type", "autostart", "requires", "after", "before"})
 
 	for _, v := range data {
 		table.Append(v)
