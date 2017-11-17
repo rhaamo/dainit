@@ -16,11 +16,11 @@ var (
 	// LutraVersion should match the one in lutractl/main.go
 	LutraVersion = "0.1"
 
-	// StartupServices Should only be used for the FIRST startup
-	// StartupServices is the in-memory map list of processes started on a full-start boot
-	StartupServices = make(map[ServiceName][]ServiceName)
-	// StartupTargets ordered slice
-	StartupTargets = make([]ServiceName, 0)
+	// OrderedServices Should only be used for the FIRST startup or to have a sorted graph of dependencies between targets
+	// OrderedServices is the in-memory map list of processes started on a full-start boot
+	OrderedServices = make(map[ServiceName][]ServiceName)
+	// OrderedTargets ordered slice
+	OrderedTargets = make([]ServiceName, 0)
 
 	// LoadedServices is used for any other actions, start, stop, etc.
 	LoadedServices = make(map[ServiceName]*Service)
@@ -108,9 +108,9 @@ func dumpServicesTree(ctx *cli.Context) error {
 	SortServicesForBoot()
 
 	// Print the tree
-	for idx, target := range StartupTargets {
+	for idx, target := range OrderedTargets {
 		fmt.Printf("+ [%d] %s\n", idx, target)
-		for idx, service := range StartupServices[target] {
+		for idx, service := range OrderedServices[target] {
 			fmt.Printf(" - [%d] %s\n", idx, service)
 		}
 	}
@@ -153,9 +153,9 @@ func dumpServicesList(ctx *cli.Context) error {
 
 	data := [][]string{}
 
-	for _, target := range StartupTargets {
+	for _, target := range OrderedTargets {
 		targetDisplay := target // display the target only on the first occurrence
-		for _, service := range StartupServices[target] {
+		for _, service := range OrderedServices[target] {
 			s := LoadedServices[service]
 			data = append(data, []string{
 				string(targetDisplay),

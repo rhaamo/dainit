@@ -156,13 +156,13 @@ type Service struct {
 // The LoadedServices does have his own mutex, used by the services's .Start/Stop etc. functions.
 func StartServices() {
 	// Work target by target, one mutex waitgroup per target, one after another
-	for _, target := range StartupTargets {
+	for _, target := range OrderedTargets {
 		wg := sync.WaitGroup{}
 
-		wg.Add(len(StartupServices[target])) // Add the number of services in this target to the waitgroup
+		wg.Add(len(OrderedServices[target])) // Add the number of services in this target to the waitgroup
 
 		// For each service, start them
-		for _, serviceName := range StartupServices[target] {
+		for _, serviceName := range OrderedServices[target] {
 			service := LoadedServices[serviceName] // this is the service to start
 
 			go func(s *Service) {
@@ -630,7 +630,7 @@ func SortServicesForBoot() (err error) {
 	// For each target, process services
 	for _, target := range listTargets {
 		// Add target to ordered slice
-		StartupTargets = append(StartupTargets, ServiceName(target.String()))
+		OrderedTargets = append(OrderedTargets, ServiceName(target.String()))
 
 		// Now for this target, process services
 		graphServices := goraph.NewGraph()
@@ -691,8 +691,8 @@ func SortServicesForBoot() (err error) {
 		}
 
 		for _, s := range listServices {
-			StartupServices[ServiceName(target.String())] = append(
-				StartupServices[ServiceName(target.String())],
+			OrderedServices[ServiceName(target.String())] = append(
+				OrderedServices[ServiceName(target.String())],
 				ServiceName(s.String()))
 		}
 	}
