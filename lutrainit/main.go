@@ -154,7 +154,7 @@ func dumpServicesList(ctx *cli.Context) error {
 	data := [][]string{}
 
 	for _, target := range StartupTargets {
-		targetDisplay := target // display the target only on the first occurence
+		targetDisplay := target // display the target only on the first occurrence
 		for _, service := range StartupServices[target] {
 			s := LoadedServices[service]
 			data = append(data, []string{
