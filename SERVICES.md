@@ -1,14 +1,15 @@
+TODO: Full update of this file, currently outdated
+
 # /etc/lutrainit/lutra.d/
 ## foo.service
 
     Name: ServiceFoo
-    Description: Service Foo does lot of things and provides 'foobar'
+    Description: Service Foo does lot of things and provides 'foo'
     Type: forking
     PIDFile: /var/run/foo.pid
     
     Startup: start_foo.bar
     Shutdown: stop_foo.bar
-    Provides: foobar
     
 ## baz.service
 
@@ -16,8 +17,7 @@
     Description: Baz runs after Foo and then needs 'foobar'
     Type: simple
     
-    Provides: baz
-    Needs: foobar
+    Requires: foobar
     Startup: baz --start
     Shutdown: killall baz
     
@@ -26,8 +26,7 @@
 - Name: name of the service, a-Z0-9 without spaces, - and _ allowed
 - Description: One line description of the service
 - Relations
-  - Provides: foo,bar
-  - Needs: bar,other
+  - Requires: bar,other
   
   Separate multiples keywords with `,`. Only a-Z0-9 - and _ allowed
 - Startup: One line command to start service
@@ -41,9 +40,7 @@
   - simple: daemon doesn't fork by himself
   - virtual: used only for dependencies ordering
   
-Provides are mandatory, you can just put here the Name of the service.
-
-Needs are used for relationship, like udev can only be started when loopback have been brought up.
+Requires are used for relationship, like udev can only be started when loopback have been brought up.
 
 ## Default values
 - Autostart: true

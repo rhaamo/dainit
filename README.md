@@ -10,7 +10,7 @@ lutrainit will do the following:
 2. Remount the root filesystem[1]
 3. Mount all other non-network filesystems and activate swap partitions
 3. Start processes with config files in /etc/lutrainit/lutra.d/ after their dependencies
-   ("Needs") are started. See `conf/` for a samples config.
+   ("Requires") are started. See `conf/` for a samples config.
 4. Start some TTY or anything other user-specified.
 5. Kill running processes, unmount filesystems, and poweroff the system once that last
    login session ends.

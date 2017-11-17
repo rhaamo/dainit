@@ -1,11 +1,12 @@
-Name: lvm2-lvpolld
-Description: LVM2 poll daemon
-Type: forking
-Autostart: true
+[order]
+WantedBy=disk.target
+Requires=udev.service
 
-ExecPreStart: mkdir -m 0700 -p /run/lvm
-Startup: /sbin/lvmpolld -t 60
-PIDFile: /run/lvmpolld.pid
+[service]
+Description=LVM2 poll daemon
+Type=forking
+Autostart=true
 
-Provides: lvm2-lvpolld
-Needs: devfs
+ExecPreStart=mkdir -m 0700 -p /run/lvm
+ExecStart=/sbin/lvmpolld -t 60
+PIDFile=/run/lvmpolld.pid

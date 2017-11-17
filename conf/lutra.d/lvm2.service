@@ -1,10 +1,12 @@
-Name: lvm2
-Description: LVM2
-Type: oneshot
-Autostart: true
+[order]
+WantedBy=disk.target
+After=lvm2-lvpolld.service,lvm2-lvmetad.service
+Requires=udev.service
 
-Startup: /sbin/lvm vgchange -aay --sysinit >/dev/null
-PIDFile: /run/lvmpolld.pid
+[service]
+Description=LVM2
+Type=oneshot
+Autostart=true
 
-Provides: lvm2, premount
-Needs: lvm2-lvpolld, lvm2-lvmetad
+ExecPreStart=mkdir -m 0700 -p /run/lvm
+ExecStart=/sbin/lvm vgchange -aay --sysinit >/dev/null

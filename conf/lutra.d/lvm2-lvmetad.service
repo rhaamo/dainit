@@ -1,11 +1,12 @@
-Name: lvm2-lvmetad
-Description: LVM2 metadata daemon
-Type: forking
-Autostart: true
+[order]
+WantedBy=disk.target
+Requires=udev.service
 
-ExecPreStart: mkdir -m 0700 -p /run/lvm
-Startup: /sbin/lvmetad
-PIDFile: /run/lvmetad.pid
+[service]
+Description=LVM2 metadata daemon
+Type=forking
+Autostart=true
 
-Provides: lvm2-lvmetad
-Needs: devfs
+ExecPreStart=mkdir -m 0700 -p /run/lvm
+ExecStart=/sbin/lvmetad
+PIDFile=/run/lvmetad.pid

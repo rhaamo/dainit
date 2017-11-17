@@ -111,9 +111,6 @@ func (c Command) String() string {
 type StartupService struct {
 	Name      ServiceName
 	AutoStart bool
-
-	Provides []ServiceType
-	Needs    []ServiceType
 }
 
 // Service represents a struct with useful infos used for management of services

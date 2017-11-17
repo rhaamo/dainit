@@ -1,12 +1,12 @@
-Name: network-manager
-Description: network connection manager
-Type: forking
-Autostart: false
+[order]
+WantedBy=network.target
+#Requires=loopback.service,udev.service
 
-PIDFile: /var/run/NetworkManager/NetworkManager.pid
+[service]
+Description=network connection manager
+Type=forking
+Autostart=true
+PIDFile=/var/run/NetworkManager/NetworkManager.pid
 
-Startup: start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
-Shutdown: start-stop-daemon --stop --retry 5 --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
-
-Provides: network
-Needs: devfs
+ExecStart=start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager
+ExecStop=start-stop-daemon --stop --retry 5 --quiet --pidfile /var/run/NetworkManager/NetworkManager.pid --exec /usr/sbin/NetworkManager

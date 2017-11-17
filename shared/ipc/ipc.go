@@ -9,7 +9,7 @@ import (
 // Version used with Version command of lutractl
 // Returns server version to the client
 type Version struct {
-	ServerVersion string
+	ServerVersion   string
 	ServerBuildTime string
 	ServerBuildHash string
 }
@@ -58,14 +58,14 @@ type SysStatus struct {
 
 // AskStatus struct with limited service name or asking for all
 type AskStatus struct {
-	Name		string
-	All			bool
+	Name string
+	All  bool
 }
 
 // AnswerReload is a reload answer
 type AnswerReload struct {
-	Err			bool
-	ErrStr		string
+	Err    bool
+	ErrStr string
 }
 
 // LastAction represent the latest action done to the service
@@ -154,45 +154,41 @@ func (rs RunState) String() string {
 	}
 }
 
-
 // ServiceAction for start/stop/restart
 type ServiceAction struct {
-	Name		string
-	Action		LastAction
+	Name   string
+	Action LastAction
 }
 
 // ServiceActionAnswer is a service action answer
 type ServiceActionAnswer struct {
-	Name		string
-	Action		LastAction
-	Err			bool
-	ErrStr		string
+	Name   string
+	Action LastAction
+	Err    bool
+	ErrStr string
 }
 
 // Service represents a struct with usefull infos used for management of services
 type Service struct {
-	Name		ServiceName
-	AutoStart	bool
+	Name      ServiceName
+	AutoStart bool
 
-	Provides 	[]ServiceType
-	Needs    	[]ServiceType
+	Description string // Currently not used
+	State       RunState
 
-	Description		string		// Currently not used
-	State			RunState
+	LastAction   LastAction
+	LastActionAt int64 // Timestamp of the last action (UTC)
+	LastMessage  string
+	LastKnownPID int
 
-	LastAction		LastAction
-	LastActionAt	int64		// Timestamp of the last action (UTC)
-	LastMessage		string
-	LastKnownPID	int
+	Type    string // forking or simple
+	PIDFile string
 
-	Type			string // forking or simple
-	PIDFile			string
+	Startup    Command
+	Shutdown   Command
+	CheckAlive Command
 
-	Startup  	Command
-	Shutdown 	Command
-	CheckAlive  Command
-
-	Deleted			bool
+	Deleted bool
 }
 
 // IsCustASCII is a custom regexp checker for sanity

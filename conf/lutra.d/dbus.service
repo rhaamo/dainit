@@ -1,12 +1,13 @@
-Name: dbus
-Description: system message bus
-Type: forking
-Autostart: true
+[order]
+WantedBy=basic.target
+After=loopback.service
 
-ExecPreStart: /usr/bin/dbus-uuidgen --ensure && mkdir /var/run/dbus && chown messagebus:messagebus /var/run/dbus
-Startup: start-stop-daemon --start --quiet --pidfile /var/run/dbus/pid --exec /usr/bin/dbus-daemon -- --system
-Shutdown: start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile /var/run/dbus/pid --user messagebus
-PIDFile: /var/run/dbus/pid
+[service]
+Description=system message bus
+Type=forking
+Autostart=true
 
-Provides: dbus
-Requires: devfs
+ExecPreStart=/usr/bin/dbus-uuidgen --ensure && mkdir /var/run/dbus && chown messagebus:messagebus /var/run/dbus
+ExecStart=start-stop-daemon --start --quiet --pidfile /var/run/dbus/pid --exec /usr/bin/dbus-daemon -- --system
+ExecStop=start-stop-daemon --stop --retry 5 --quiet --oknodo --pidfile /var/run/dbus/pid --user messagebus
+PIDFile=/var/run/dbus/pid

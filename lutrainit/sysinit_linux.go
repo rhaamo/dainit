@@ -138,7 +138,7 @@ func sysinit(ctx *cli.Context) error {
 	ReloadConfig(MainConfig.StartedReexec, "/etc/lutrainit/", false)
 
 	if !MainConfig.StartedReexec {
-		// Start all services from StartupServices in the right Needs/Provide order
+		// Start all services from StartupServices in the right Requires order
 		StartServices()
 	}
 

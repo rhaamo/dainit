@@ -1,10 +1,11 @@
-Name: lightdm
-Description: Light Display Manager
-Type: forking
-Autostart: false
+[order]
+WantedBy=multi-user.target
 
-Startup: start-stop-daemon --start --quiet --pidfile /var/run/lightdm.pid --name lightdm --startas /usr/sbin/lightdm -- -d
-Shutdown: start-stop-daemon --stop --quiet --pidfile /var/run/lightdm.pid --name lightdm --retry TERM/5/TERM/5
-PIDFile: /var/run/lightdm.pid
+[service]
+Description=Light Display Managed
+Type=forking
+Autostart=false
 
-Provides: lightdm
+ExecStart=start-stop-daemon --start --quiet --pidfile /var/run/lightdm.pid --name lightdm --startas /usr/sbin/lightdm -- -d
+ExecStop=start-stop-daemon --stop --quiet --pidfile /var/run/lightdm.pid --name lightdm --retry TERM/5/TERM/5
+PIDFile=/var/run/lightdm.pid
