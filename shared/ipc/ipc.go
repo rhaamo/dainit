@@ -2,6 +2,7 @@ package ipc
 
 import (
 	"regexp"
+	"strings"
 )
 
 // WARNING: Huges parts of this file should be synced with content of lutrainit/lutrainit/service.go
@@ -196,3 +197,13 @@ var IsCustASCII = regexp.MustCompile(`^[a-zA-Z0-9_\-.]+$`).MatchString
 
 // IsCustASCIISpace is a custom regexp checker for sanity with a space !!!
 var IsCustASCIISpace = regexp.MustCompile(`^[a-zA-Z0-9_\-. ]+$`).MatchString
+
+// IsService or not
+func (s Service) IsService() bool {
+	return strings.HasSuffix(string(s.Name), ".service")
+}
+
+// IsTarget or not
+func (s Service) IsTarget() bool {
+	return strings.HasSuffix(string(s.Name), ".target")
+}

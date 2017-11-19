@@ -40,6 +40,10 @@ func getStatus(ctx *cli.Context) error {
 	}
 
 	for _, loadedService := range resIpc {
+		if loadedService.IsTarget() {
+			continue // Ignore targets
+		}
+
 		fmt.Printf("Service: %s, of type %s\n", loadedService.Name, loadedService.Type)
 		fmt.Printf("Description: %s\n", loadedService.Description)
 		if loadedService.Deleted {
