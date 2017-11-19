@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 )
 
 // Runs a command, setting up Stdin/Stdout/Stderr to be the standard OS
@@ -96,6 +97,14 @@ func sysinit(ctx *cli.Context) error {
 
 	// Start socket in background
 	go socketInitctl()
+
+	// Wait a bit for the socket to initialize
+	time.Sleep(500 * time.Millisecond)
+
+	// Then fix the rights on the socket
+	if err := os.Chmod("/run/ottersock", 0757); err != nil {
+		clog.Error(2, "cannot fix rights on socket: %s", err.Error())
+	}
 
 	if !MainConfig.StartedReexec {
 		// Mount local filesystems
